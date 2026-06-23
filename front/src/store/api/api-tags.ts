@@ -1,6 +1,9 @@
 export const API_TAGS = {
   Auth: 'Auth',
   User: 'User',
+  ProductCategory: 'ProductCategory',
+  ProductBrand: 'ProductBrand',
+  Product: 'Product',
   Inventory: 'Inventory',
   Warehouse: 'Warehouse',
   Order: 'Order',

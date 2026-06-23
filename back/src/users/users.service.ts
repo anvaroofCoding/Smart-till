@@ -199,6 +199,18 @@ export class UsersService {
       .exec();
   }
 
+  async findByLoginIncludingInactive(
+    login: string,
+  ): Promise<UserDocument | null> {
+    const normalized = login.toLowerCase().trim();
+    return this.userModel
+      .findOne({
+        $or: [{ login: normalized }, { email: normalized }],
+      })
+      .select('+passwordHash')
+      .exec();
+  }
+
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.findByLogin(email);
   }
@@ -265,5 +277,60 @@ export class UsersService {
 
   async deactivate(id: string): Promise<void> {
     await this.setActive(id, false);
+  }
+
+  async ensureSeedAdmin(
+    options: {
+      login: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      legacyEmail: string;
+    },
+    mode: 'force' | 'bootstrap' = 'force',
+  ): Promise<'created' | 'updated' | 'migrated' | 'skipped'> {
+    const login = options.login.toLowerCase().trim();
+    const existing = await this.findByLoginIncludingInactive(login);
+
+    if (existing) {
+      if (mode === 'bootstrap' && existing.isActive) {
+        return 'skipped';
+      }
+
+      await this.update(existing._id.toString(), {
+        ...(mode === 'force' ? { password: options.password } : {}),
+        firstName: options.firstName,
+        lastName: options.lastName,
+        position: UserPosition.ADMIN,
+        isActive: true,
+      });
+      return 'updated';
+    }
+
+    const legacy = await this.findByLoginIncludingInactive(options.legacyEmail);
+
+    if (legacy) {
+      await this.update(legacy._id.toString(), {
+        login,
+        password: options.password,
+        firstName: options.firstName,
+        lastName: options.lastName,
+        position: UserPosition.ADMIN,
+        isActive: true,
+      });
+      return 'migrated';
+    }
+
+    await this.createFromDto({
+      firstName: options.firstName,
+      lastName: options.lastName,
+      login,
+      password: options.password,
+      phone: '+998 90 000 00 01',
+      age: 30,
+      position: UserPosition.ADMIN,
+    });
+
+    return 'created';
   }
 }

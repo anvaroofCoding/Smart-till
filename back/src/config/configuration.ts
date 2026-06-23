@@ -28,4 +28,12 @@ export default () => ({
     enabled: process.env.SWAGGER_ENABLED !== 'false',
     path: process.env.SWAGGER_PATH ?? 'docs',
   },
+  seed: {
+    adminOnStartup: process.env.SEED_ADMIN_ON_STARTUP !== 'false',
+    adminLogin: process.env.SEED_ADMIN_LOGIN ?? 'admin',
+    adminPassword: process.env.SEED_ADMIN_PASSWORD ?? '123123',
+    adminFirstName: process.env.SEED_ADMIN_FIRST_NAME ?? 'Admin',
+    adminLastName: process.env.SEED_ADMIN_LAST_NAME ?? 'Administrator',
+    adminLegacyEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@warehouse.uz',
+  },
 });

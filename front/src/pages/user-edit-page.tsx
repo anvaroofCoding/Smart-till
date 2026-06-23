@@ -46,7 +46,7 @@ export function UserEditPage() {
     }
 
     try {
-      await updateUser({ id, body: buildUserPayload(form) }).unwrap()
+      await updateUser({ id, body: buildUserPayload(form, 'edit') }).unwrap()
       navigate(USERS_LIST_PATH)
     } catch (err) {
       setError(getApiErrorMessage(err, 'Saqlash amalga oshmadi'))

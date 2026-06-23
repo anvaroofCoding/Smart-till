@@ -1,5 +1,5 @@
 import { format, isValid, parse } from 'date-fns'
-import { uz } from 'date-fns/locale'
+import { uz } from 'date-fns/locale/uz'
 
 export const DATE_DISPLAY_FORMAT = 'dd.MM.yyyy'
 export const DATE_ISO_FORMAT = 'yyyy-MM-dd'

@@ -13,7 +13,8 @@ export interface ApiResponse<T> {
 }
 
 export interface ApiErrorBody {
-  statusCode: number
+  status?: number
+  statusCode?: number
   message: string | string[]
   error?: string
 }

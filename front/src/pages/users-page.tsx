@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
+import { DataTablePagination } from '@/components/data-table-pagination'
 import {
   DataTableSkeleton,
   QueryRefreshIndicator,
@@ -29,6 +30,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useQueryLoading, useQueriesLoading } from '@/hooks/use-query-loading'
+import { useListPagination } from '@/hooks/use-list-pagination'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { formatDateDisplay } from '@/lib/date-format'
 import { cn } from '@/lib/utils'
@@ -68,20 +70,27 @@ function UserActiveSwitch({
   onToggle: (isActive: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-end gap-2">
-      <Label
-        htmlFor={`active-${user.id}`}
-        className="text-muted-foreground text-xs"
-      >
-        {user.isActive ? 'Faol' : 'No faol'}
-      </Label>
+    <div className="flex items-center gap-2">
       <Switch
         id={`active-${user.id}`}
         checked={user.isActive}
         disabled={disabled}
         onCheckedChange={onToggle}
-        aria-label={user.isActive ? 'Nofaol qilish' : 'Faol qilish'}
+        aria-label={
+          user.isActive
+            ? `${user.login} foydalanuvchini nofaol qilish`
+            : `${user.login} foydalanuvchini faol qilish`
+        }
       />
+      <Label
+        htmlFor={`active-${user.id}`}
+        className={cn(
+          'cursor-pointer text-xs font-medium',
+          user.isActive ? 'text-foreground' : 'text-muted-foreground',
+        )}
+      >
+        {user.isActive ? 'Faol' : 'Nofaol'}
+      </Label>
     </div>
   )
 }
@@ -89,15 +98,17 @@ function UserActiveSwitch({
 export function UsersPage() {
   const [search, setSearch] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
+  const { page, perPage, setPage, setPerPage } = useListPagination(search)
 
   const usersQuery = useGetUsersQuery({
     search: search.trim() || undefined,
-    page: 1,
-    perPage: 50,
+    page,
+    perPage,
   })
 
   const statsQuery = useGetUsersStatsQuery()
-  const [setUserStatus, statusState] = useSetUserStatusMutation()
+  const [setUserStatus] = useSetUserStatusMutation()
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null)
 
   const { showSkeleton: showTableSkeleton, showRefreshing: showTableRefreshing } =
     useQueryLoading(usersQuery)
@@ -109,15 +120,24 @@ export function UsersPage() {
 
   const users = usersQuery.data?.data ?? []
   const stats = statsQuery.data
+  const paginationMeta = usersQuery.data?.meta ?? {
+    total: 0,
+    page,
+    perPage,
+    totalPages: 1,
+  }
 
   async function handleToggleActive(user: UserRecord, isActive: boolean) {
     setActionError(null)
+    setTogglingUserId(user.id)
     try {
       await setUserStatus({ id: user.id, isActive }).unwrap()
     } catch (err) {
       setActionError(
         getApiErrorMessage(err, 'Holatni o\'zgartirish amalga oshmadi'),
       )
+    } finally {
+      setTogglingUserId(null)
     }
   }
 
@@ -135,7 +155,7 @@ export function UsersPage() {
       value: stats?.active ?? 0,
     },
     {
-      title: 'No faol xodimlar',
+      title: 'Nofaol xodimlar',
       value: stats?.inactive ?? 0,
     },
   ]
@@ -147,7 +167,8 @@ export function UsersPage() {
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Foydalanuvchilar</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Tizim foydalanuvchilarini yaratish, tahrirlash va sahifalarga ruxsat berish.
+              Foydalanuvchilarni yaratish, tahrirlash va istalgan vaqtda faol yoki nofaol
+              qilish. Nofaol foydalanuvchi tizimga kira olmaydi.
             </p>
           </div>
           <Button asChild>
@@ -189,7 +210,8 @@ export function UsersPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Foydalanuvchilar</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Tizim foydalanuvchilarini yaratish, tahrirlash va sahifalarga ruxsat berish.
+            Foydalanuvchilarni yaratish, tahrirlash va istalgan vaqtda faol yoki nofaol
+            qilish. Nofaol foydalanuvchi tizimga kira olmaydi.
           </p>
         </div>
         <Button asChild>
@@ -301,9 +323,13 @@ export function UsersPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={user.isActive ? 'default' : 'outline'}>
-                              {user.isActive ? 'Faol' : 'No faol'}
-                            </Badge>
+                            <UserActiveSwitch
+                              user={user}
+                              disabled={togglingUserId === user.id}
+                              onToggle={(isActive) =>
+                                handleToggleActive(user, isActive)
+                              }
+                            />
                           </TableCell>
                           <TableCell>
                             {user.position === 'admin' ? (
@@ -315,23 +341,14 @@ export function UsersPage() {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link
-                                  to={`/sozlamalar/foydalanuvchilar/${user.id}/tahrirlash`}
-                                  aria-label="Tahrirlash"
-                                >
-                                  <AppIcon name="pencil" />
-                                </Link>
-                              </Button>
-                              <UserActiveSwitch
-                                user={user}
-                                disabled={statusState.isLoading}
-                                onToggle={(isActive) =>
-                                  handleToggleActive(user, isActive)
-                                }
-                              />
-                            </div>
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link
+                                to={`/sozlamalar/foydalanuvchilar/${user.id}/tahrirlash`}
+                                aria-label="Tahrirlash"
+                              >
+                                <AppIcon name="pencil" />
+                              </Link>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       )
@@ -341,6 +358,15 @@ export function UsersPage() {
               </Table>
             )}
           </div>
+
+          {!showTableSkeleton && (
+            <DataTablePagination
+              meta={paginationMeta}
+              onPageChange={setPage}
+              onPerPageChange={setPerPage}
+              disabled={showTableRefreshing}
+            />
+          )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
         </CardContent>

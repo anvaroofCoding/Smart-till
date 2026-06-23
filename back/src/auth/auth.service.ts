@@ -21,7 +21,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByLogin(dto.login);
+    const user = await this.usersService.findByLoginIncludingInactive(dto.login);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

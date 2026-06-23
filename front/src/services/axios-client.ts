@@ -45,7 +45,7 @@ function attachAuthInterceptor(instance: AxiosInstance) {
     (response) => response,
     (error: AxiosError<ApiErrorBody>) => {
       const status = error.response?.status
-      if (status === 401 || status === 403) {
+      if (status === 401) {
         onUnauthorized?.()
       }
       return Promise.reject(error)
@@ -75,7 +75,7 @@ export async function axiosBaseQuery<T>(
     const axiosError = error as AxiosError<ApiErrorBody>
     return {
       error: axiosError.response?.data ?? {
-        statusCode: axiosError.response?.status ?? 500,
+        status: axiosError.response?.status ?? 500,
         message: axiosError.message,
         error: 'NetworkError',
       },

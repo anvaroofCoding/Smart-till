@@ -21,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -50,6 +51,7 @@ export interface UserFormValues {
   confirmPassword: string
   position: UserPosition
   allowedPages: string[]
+  isActive: boolean
 }
 
 export const emptyUserForm: UserFormValues = {
@@ -62,6 +64,7 @@ export const emptyUserForm: UserFormValues = {
   confirmPassword: '',
   position: 'kassir',
   allowedPages: [],
+  isActive: true,
 }
 
 export function userToFormValues(user: UserRecord): UserFormValues {
@@ -75,6 +78,7 @@ export function userToFormValues(user: UserRecord): UserFormValues {
     confirmPassword: '',
     position: user.position,
     allowedPages: user.allowedPages ?? [],
+    isActive: user.isActive,
   }
 }
 
@@ -111,6 +115,7 @@ export function validateUserForm(
 
 export function buildUserPayload(
   form: UserFormValues,
+  mode: 'create' | 'edit' = 'create',
 ): CreateUserRequest | UpdateUserRequest {
   const payload: CreateUserRequest | UpdateUserRequest = {
     firstName: form.firstName.trim(),
@@ -124,6 +129,10 @@ export function buildUserPayload(
 
   if (form.password) {
     payload.password = form.password
+  }
+
+  if (mode === 'edit') {
+    ;(payload as UpdateUserRequest).isActive = form.isActive
   }
 
   return payload
@@ -292,6 +301,33 @@ export function UserForm({
                     Administrator barcha sahifalarga avtomatik ruxsatga ega.
                   </FieldDescription>
                 </Field>
+
+                {mode === 'edit' && (
+                  <Field className="md:col-span-2 xl:col-span-3">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-1">
+                        <FieldLabel htmlFor="isActive">Hisob holati</FieldLabel>
+                        <FieldDescription>
+                          Nofaol foydalanuvchi tizimga kira olmaydi. Holatni istalgan
+                          vaqtda o&apos;zgartirish mumkin.
+                        </FieldDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="isActive"
+                          checked={form.isActive}
+                          onCheckedChange={(checked) =>
+                            updateField('isActive', checked)
+                          }
+                          disabled={isSaving}
+                        />
+                        <Label htmlFor="isActive" className="text-sm font-medium">
+                          {form.isActive ? 'Faol' : 'Nofaol'}
+                        </Label>
+                      </div>
+                    </div>
+                  </Field>
+                )}
               </div>
             </FieldGroup>
           </CardContent>

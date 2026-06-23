@@ -32,7 +32,10 @@ export const usersApi = baseApi.injectEndpoints({
         method: 'GET',
         params: params ?? {},
       }),
-      transformResponse: (response: UsersListResponse) => response,
+      transformResponse: (response: ApiResponse<UsersListResponse> | UsersListResponse) =>
+        'data' in response && Array.isArray(response.data) && 'meta' in response
+          ? (response as UsersListResponse)
+          : (response as ApiResponse<UsersListResponse>).data,
       providesTags: (result) =>
         result
           ? [

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CalendarIcon } from 'lucide-react'
-import { uz } from 'date-fns/locale'
+import { uz } from 'date-fns/locale/uz'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'

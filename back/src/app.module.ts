@@ -9,6 +9,9 @@ import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { UsersModule } from './users/users.module';
+import { ProductCategoriesModule } from './product-categories/product-categories.module';
+import { ProductBrandsModule } from './product-brands/product-brands.module';
+import { ProductsModule } from './products/products.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -23,6 +26,9 @@ import { RolesGuard } from './common/guards/roles.guard';
     QueueModule.register(),
     AuthModule,
     UsersModule,
+    ProductCategoriesModule,
+    ProductBrandsModule,
+    ProductsModule,
     HealthModule,
     WebsocketModule,
   ],
