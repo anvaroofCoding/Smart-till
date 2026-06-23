@@ -1,0 +1,81 @@
+---
+description: Barcha sahifalarda skeleton loading yagona standart bo'yicha qo'llaniladi
+globs: Front/src/pages/**/*.tsx,Front/src/components/**/*.tsx
+alwaysApply: false
+---
+
+# Skeleton Loading Standarti (Smart Till)
+
+Har qanday yangi yoki yangilangan sahifa server ma'lumotini yuklaganda **bir xil skeleton loading** ishlatishi shart.
+
+## Asosiy qoidalar
+
+1. **Birinchi yuklash** → skeleton (`showSkeleton`)
+2. **Fon yangilanish** (qidiruv, filter, refetch) → kontent qoladi, faqat `QueryRefreshIndicator`
+3. Hech qachon bo'sh oq ekran yoki faqat "Loading..." matni ishlatilmaydi
+4. Skeleton shakli haqiqiy UI layoutiga mos bo'ladi
+
+## Majburiy importlar
+
+```tsx
+import { useQueryLoading, useQueriesLoading } from '@/hooks/use-query-loading'
+import {
+  PageHeaderSkeleton,
+  StatsCardsSkeleton,
+  DataTableSkeleton,
+  FormPageSkeleton,
+  QueryRefreshIndicator,
+} from '@/components/loading'
+```
+
+## RTK Query namunasi
+
+```tsx
+const query = useGetItemsQuery(params)
+const { showSkeleton, showRefreshing } = useQueryLoading(query)
+
+if (showSkeleton) {
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col gap-4">
+      <PageHeaderSkeleton />
+      <StatsCardsSkeleton count={4} />
+      <Card>
+        <CardContent>
+          <DataTableSkeleton columns={6} rows={5} showToolbar headers={[...]} />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+```
+
+## Sahifa turlari
+
+| Tur | Skeleton komponenti |
+|-----|-------------------|
+| Ro'yxat + statistika | `PageHeaderSkeleton` + `StatsCardsSkeleton` + `DataTableSkeleton` |
+| Jadval sahifasi | `PageHeaderSkeleton` + `DataTableSkeleton` |
+| Forma (create/edit) | `FormPageSkeleton` |
+| Bir nechta query | `useQueriesLoading([query1, query2])` |
+
+## Jadval qoidalari
+
+- Ustun sarlavhalari (`TableHead`) skeleton paytida **haqiqiy matn** bo'lishi kerak
+- Faqat `TableBody` ichida skeleton qatorlar
+- Default: `rows={5}`, `showToolbar` qidiruv bo'lsa `true`
+
+## Forma qoidalari
+
+- Tahrirlash sahifalari: `if (showSkeleton) return <FormPageSkeleton />`
+- Forma skeletoni `FormPageSkeleton` dan boshqa custom yaratilmaydi
+
+## Accessibility
+
+- Skeleton konteynerlarda `aria-busy` va `aria-label` ishlatiladi
+- Fon yangilanishda `QueryRefreshIndicator` (`role="status"`)
+
+## Taqiqlangan
+
+- Inline `<Skeleton />` to'plamlarini har sahifada qayta yozish
+- `isLoading && <p>Yuklanmoqda...</p>`
+- Skeletonsiz `return null` yoki bo'sh div

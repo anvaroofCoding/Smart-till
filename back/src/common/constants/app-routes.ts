@@ -1,0 +1,28 @@
+/** Sidebar sahifalari — ruxsat darajasini hisoblash uchun */
+export const APP_PAGE_PATHS = [
+  '/kassir/buyurtma-yaratish',
+  '/kassir/buyurtmalar',
+  '/kassir/buyurtmani-chiqim-qilish',
+  '/kassir/kunlik-balanslar',
+  '/kassir/xarajatlar',
+  '/kassir/kirimlar',
+  '/kassir/hisobotlar',
+  '/maxsulotlar/ro-yxat',
+  '/maxsulotlar/brend',
+  '/maxsulotlar/kategoriya',
+  '/omborlar/maxsulotlar-soni',
+  '/omborlar/ro-yxat',
+  '/transfer/transferlar',
+  '/transfer/qabul-qilish',
+  '/transfer/jo-natish',
+  '/sozlamalar/narx',
+  '/sozlamalar/foydalanuvchilar',
+  '/sozlamalar/dastur',
+  '/sotuvchilar/maxsulotlar',
+  '/sotuvchilar/buyurtmalar',
+  '/inventarizatsiya/ro-yxat',
+  '/qarz/qarzdorlar',
+  '/yetkazib-beruvchilar/ro-yxat',
+] as const
+
+export const TOTAL_APP_PAGES = APP_PAGE_PATHS.length

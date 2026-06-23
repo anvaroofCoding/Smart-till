@@ -1,0 +1,15 @@
+export const SOCKET_EVENTS = {
+  INVENTORY_UPDATED: 'inventory:updated',
+  INVENTORY_SCANNED: 'inventory:scanned',
+  STOCK_LOW: 'stock:low',
+  ORDER_CREATED: 'order:created',
+  ORDER_UPDATED: 'order:updated',
+  WAREHOUSE_ALERT: 'warehouse:alert',
+} as const;
+
+export const CLIENT_EVENTS = {
+  INVENTORY_SUBSCRIBE: 'inventory:subscribe',
+  INVENTORY_UNSUBSCRIBE: 'inventory:unsubscribe',
+  SCANNER_REGISTER: 'scanner:register',
+  SCANNER_SCAN: 'scanner:scan',
+} as const;

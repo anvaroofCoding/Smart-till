@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Smart Till — Kassa tizimi</title>
+    <meta
+      name="description"
+      content="Smart Till — ombor, kassa va savdo boshqaruv tizimi. Buyurtmalar, mahsulotlar, inventarizatsiya, transfer va hisobotlar bir platformada."
+    />
+    <meta
+      name="keywords"
+      content="kassa tizimi, ombor boshqaruvi, POS tizimi, savdo dasturi, inventarizatsiya, Smart Till, O'zbekiston"
+    />
+    <meta name="author" content="Smart Till" />
+    <meta name="robots" content="index, follow" />
+    <meta name="application-name" content="Smart Till" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Favicon (Google: ≥48×48, kvadrat, barqaror URL) -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="canonical" href="https://smarttill.uz/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Smart Till" />
+    <meta property="og:locale" content="uz_UZ" />
+    <meta property="og:title" content="Smart Till — Kassa tizimi" />
+    <meta
+      property="og:description"
+      content="Ombor, kassa va savdo boshqaruv tizimi — buyurtmalar, mahsulotlar va hisobotlar bir joyda."
+    />
+    <meta property="og:url" content="https://smarttill.uz/" />
+    <meta property="og:image" content="https://smarttill.uz/og-image.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Smart Till — Kassa tizimi" />
+    <meta
+      name="twitter:description"
+      content="Ombor, kassa va savdo boshqaruv tizimi — buyurtmalar, mahsulotlar va hisobotlar bir joyda."
+    />
+    <meta name="twitter:image" content="https://smarttill.uz/og-image.png" />
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('smart-till-appearance');
+          if (raw) {
+            var s = JSON.parse(raw);
+            if (s.mode === 'dark') document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+          } else {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
