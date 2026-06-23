@@ -8,6 +8,7 @@ import {
   type StockReceiptTableFilters,
 } from '@/components/stock-receipts/stock-receipt-table-filters'
 import { StockReceiptsListTable } from '@/components/stock-receipts/stock-receipts-list-table'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,18 +25,21 @@ import { getApiErrorMessage } from '@/lib/api-error'
 import { notify } from '@/lib/notify'
 import { useGetStockReceiptsQuery } from '@/store/api/stock-receipts.api'
 
-const LIST_PATH = '/omborlar/maxsulot-kirim'
-const CREATE_PATH = '/omborlar/maxsulot-kirim/yaratish'
+const LIST_PATH = '/omborlar/kirim-qabul'
 
-export function StockReceiptsPage() {
+export function StockReceiptAcceptListPage() {
   const navigate = useNavigate()
-  const [filters, setFilters] = useState<StockReceiptTableFilters>(
-    emptyStockReceiptTableFilters,
-  )
+  const [filters, setFilters] = useState<StockReceiptTableFilters>({
+    ...emptyStockReceiptTableFilters,
+    status: 'in_progress',
+  })
 
   const debouncedFilters = useDebouncedValue(filters, 300)
   const filterQuery = useMemo(
-    () => stockReceiptFiltersToQueryParams(debouncedFilters),
+    () =>
+      stockReceiptFiltersToQueryParams(debouncedFilters, {
+        submitted: true,
+      }),
     [debouncedFilters],
   )
   const filterKey = useMemo(() => JSON.stringify(filterQuery), [filterQuery])
@@ -51,7 +55,7 @@ export function StockReceiptsPage() {
     useQueryLoading(receiptsQuery)
 
   usePageMeta({
-    title: pageTitle('Maxsulot kirim qilish', 'Omborlar'),
+    title: pageTitle('Kirimni qabul qilish', 'Omborlar'),
   })
 
   const receipts = receiptsQuery.data?.data ?? []
@@ -78,16 +82,17 @@ export function StockReceiptsPage() {
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Maxsulot kirim qilish
+            Kirimni qabul qilish
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Jadval ustunlari ostidagi filterlar orqali kirimlarni qidiring.
+            Jadval ustunlari ostidagi filterlar orqali jarayondagi kirimlarni
+            qidiring va qabul qiling.
           </p>
         </div>
-        <Button asChild>
-          <Link to={CREATE_PATH}>
-            <AppIcon name="plus" />
-            Yangi kirim
+        <Button variant="outline" asChild>
+          <Link to="/omborlar/maxsulot-kirim">
+            <AppIcon name="arrow-left" />
+            Kirimlar
           </Link>
         </Button>
       </div>
@@ -95,8 +100,9 @@ export function StockReceiptsPage() {
       <Card className="flex min-h-0 flex-1 flex-col">
         <CardHeader className="shrink-0">
           <CardTitle className="flex items-center gap-2">
-            <AppIcon name="package" />
-            Kirimlar ro&apos;yxati
+            <AppIcon name="check" />
+            Qabul qilish kutilmoqda
+            <Badge variant="secondary">{paginationMeta.total}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -109,15 +115,14 @@ export function StockReceiptsPage() {
             onFilterChange={handleFilterChange}
             onPageChange={setPage}
             onPerPageChange={setPerPage}
-            emptyMessage="Kirimlar topilmadi"
+            emptyMessage="Qabul qilish uchun kirimlar topilmadi"
             renderActions={(receipt) => (
               <Button
-                variant="ghost"
                 size="sm"
                 onClick={() => navigate(`${LIST_PATH}/${receipt.id}`)}
               >
-                Ko&apos;rish
-                <AppIcon name="chevron-right" />
+                <AppIcon name="check" />
+                Qabul qilish
               </Button>
             )}
           />

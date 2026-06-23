@@ -12,7 +12,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { ProductQueryDto } from './dto/product-query.dto';
 import {
   CreateProductDto,
   ProductResponseDto,
@@ -30,8 +30,8 @@ export class ProductsController {
 
   @Get()
   @ApiOperation({ summary: 'Maxsulotlar ro\'yxati' })
-  findAll(@Query() pagination: PaginationDto) {
-    return this.productsService.findAll(pagination);
+  findAll(@Query() query: ProductQueryDto) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')

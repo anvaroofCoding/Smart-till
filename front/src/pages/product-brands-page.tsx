@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   BrandFormDialog,
   type BrandFormValues,
 } from '@/components/product-brands/brand-form-dialog'
+import {
+  emptyBrandTableFilters,
+  brandFiltersToQueryParams,
+  type BrandTableFilters,
+} from '@/components/product-brands/brand-table-filters'
+import { BrandTableFiltersRow } from '@/components/product-brands/brand-table-filters-row'
 import { AppIcon } from '@/components/icons/app-icon'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
@@ -19,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -30,11 +35,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { formatDateDisplay } from '@/lib/date-format'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
@@ -46,7 +53,15 @@ import {
 } from '@/store/api/product-brands.api'
 import type { ProductBrandRecord } from '@/types/product-brand.types'
 
-const TABLE_HEADERS = ['№', 'Nomi', 'Izoh', 'Holat', 'Amallar']
+const TABLE_HEADERS = [
+  '№',
+  'ID',
+  'Nomi',
+  'Izoh',
+  'Holat',
+  'Saqlangan vaqti',
+  'Amallar',
+] as const
 
 function BrandActiveSwitch({
   brand,
@@ -84,7 +99,9 @@ function BrandActiveSwitch({
 }
 
 export function ProductBrandsPage() {
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<BrandTableFilters>(
+    emptyBrandTableFilters,
+  )
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [editingBrand, setEditingBrand] = useState<ProductBrandRecord | null>(
@@ -92,10 +109,17 @@ export function ProductBrandsPage() {
   )
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const { page, perPage, setPage, setPerPage } = useListPagination(search)
+
+  const debouncedFilters = useDebouncedValue(filters, 300)
+  const filterQuery = useMemo(
+    () => brandFiltersToQueryParams(debouncedFilters),
+    [debouncedFilters],
+  )
+  const filterKey = useMemo(() => JSON.stringify(filterQuery), [filterQuery])
+  const { page, perPage, setPage, setPerPage } = useListPagination(filterKey)
 
   const brandsQuery = useGetProductBrandsQuery({
-    search: search.trim() || undefined,
+    ...filterQuery,
     page,
     perPage,
   })
@@ -127,6 +151,10 @@ export function ProductBrandsPage() {
       getApiErrorMessage(brandsQuery.error, "Ro'yxatni yuklab bo'lmadi"),
     )
   }, [brandsQuery.error])
+
+  function handleFilterChange(patch: Partial<BrandTableFilters>) {
+    setFilters((prev) => ({ ...prev, ...patch }))
+  }
 
   function openCreateDialog() {
     setDialogMode('create')
@@ -208,7 +236,8 @@ export function ProductBrandsPage() {
             Maxsulot brendi
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Onlayn kiritish uchun. Nom majburiy, izoh va holat ixtiyoriy.
+            Jadval ustunlari ostidagi filterlar orqali qidirish. Nom majburiy,
+            izoh va holat ixtiyoriy.
           </p>
         </div>
         <Button onClick={openCreateDialog}>
@@ -225,25 +254,12 @@ export function ProductBrandsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="relative w-full max-w-md shrink-0">
-            <AppIcon
-              name="search"
-              className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2"
-            />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish"
-              className="pl-9"
-            />
-          </div>
-
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
-                columns={5}
+                columns={TABLE_HEADERS.length}
                 rows={6}
-                headers={TABLE_HEADERS}
+                headers={[...TABLE_HEADERS]}
               />
             ) : (
               <Table>
@@ -264,12 +280,17 @@ export function ProductBrandsPage() {
                       </TableHead>
                     ))}
                   </TableRow>
+                  <BrandTableFiltersRow
+                    filters={filters}
+                    disabled={showTableRefreshing}
+                    onChange={handleFilterChange}
+                  />
                 </TableHeader>
                 <TableBody>
                   {brands.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={TABLE_HEADERS.length}
                         className="text-muted-foreground h-24 text-center"
                       >
                         Brendlar topilmadi
@@ -277,9 +298,10 @@ export function ProductBrandsPage() {
                     </TableRow>
                   ) : (
                     brands.map((brand, index) => {
-                      const page = brandsQuery.data?.meta.page ?? 1
-                      const perPage = brandsQuery.data?.meta.perPage ?? 20
-                      const rowNumber = (page - 1) * perPage + index + 1
+                      const currentPage = brandsQuery.data?.meta.page ?? 1
+                      const currentPerPage = brandsQuery.data?.meta.perPage ?? 20
+                      const rowNumber =
+                        (currentPage - 1) * currentPerPage + index + 1
 
                       return (
                         <TableRow
@@ -288,6 +310,9 @@ export function ProductBrandsPage() {
                         >
                           <TableCell className="text-muted-foreground text-center tabular-nums">
                             {rowNumber}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-[88px] truncate font-mono text-xs">
+                            {brand.id.slice(-8)}
                           </TableCell>
                           <TableCell className="font-medium">
                             {brand.name}
@@ -307,6 +332,9 @@ export function ProductBrandsPage() {
                                 handleToggleActive(brand, isActive)
                               }
                             />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                            {formatDateDisplay(brand.createdAt) || '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">

@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types/api.types'
 import type {
+  AcceptStockReceiptRequest,
   AddStockReceiptItemRequest,
   CreateStockReceiptRequest,
   StockReceiptRecord,
@@ -14,6 +15,18 @@ export interface StockReceiptsQueryParams {
   search?: string
   page?: number
   perPage?: number
+  id?: string
+  name?: string
+  status?: 'in_progress' | 'completed' | 'cancelled'
+  paymentType?: 'cash' | 'card' | 'transfer' | 'debt'
+  supplierName?: string
+  supplierId?: string
+  warehouseName?: string
+  warehouseId?: string
+  createdAt?: string
+  exchangeRate?: number
+  totalAmount?: number
+  submitted?: boolean
 }
 
 export const stockReceiptsApi = baseApi.injectEndpoints({
@@ -141,14 +154,18 @@ export const stockReceiptsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    acceptStockReceipt: builder.mutation<StockReceiptRecord, string>({
-      query: (id) => ({
+    acceptStockReceipt: builder.mutation<
+      StockReceiptRecord,
+      { id: string; body: AcceptStockReceiptRequest }
+    >({
+      query: ({ id, body }) => ({
         url: `/stock-receipts/${id}/accept`,
         method: 'POST',
+        data: body,
       }),
       transformResponse: (response: ApiResponse<StockReceiptRecord>) =>
         response.data,
-      invalidatesTags: (_result, _error, id) => [
+      invalidatesTags: (_result, _error, { id }) => [
         { type: API_TAGS.StockReceipt, id },
         { type: API_TAGS.StockReceipt, id: 'LIST' },
         { type: API_TAGS.Inventory, id: 'LIST' },
@@ -158,6 +175,19 @@ export const stockReceiptsApi = baseApi.injectEndpoints({
     cancelStockReceipt: builder.mutation<StockReceiptRecord, string>({
       query: (id) => ({
         url: `/stock-receipts/${id}/cancel`,
+        method: 'POST',
+      }),
+      transformResponse: (response: ApiResponse<StockReceiptRecord>) =>
+        response.data,
+      invalidatesTags: (_result, _error, id) => [
+        { type: API_TAGS.StockReceipt, id },
+        { type: API_TAGS.StockReceipt, id: 'LIST' },
+      ],
+    }),
+
+    submitStockReceipt: builder.mutation<StockReceiptRecord, string>({
+      query: (id) => ({
+        url: `/stock-receipts/${id}/submit`,
         method: 'POST',
       }),
       transformResponse: (response: ApiResponse<StockReceiptRecord>) =>
@@ -180,4 +210,5 @@ export const {
   useRemoveStockReceiptItemMutation,
   useAcceptStockReceiptMutation,
   useCancelStockReceiptMutation,
+  useSubmitStockReceiptMutation,
 } = stockReceiptsApi

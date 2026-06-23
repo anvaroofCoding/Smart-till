@@ -16,6 +16,7 @@ export interface StockReceiptItemRecord {
   quantity: number
   unitPrice: number
   totalPrice: number
+  receivedQuantity?: number
 }
 
 export interface StockReceiptRecord {
@@ -27,6 +28,7 @@ export interface StockReceiptRecord {
   exchangeRate: number
   notes: string
   status: ReceiptStatus
+  submittedAt?: string
   items: StockReceiptItemRecord[]
   itemsCount: number
   totalAmount: number
@@ -56,4 +58,14 @@ export interface AddStockReceiptItemRequest {
 export interface UpdateStockReceiptItemRequest {
   quantity?: number
   unitPrice?: number
+}
+
+export interface AcceptStockReceiptItemRequest {
+  itemId: string
+  received: boolean
+  receivedQuantity?: number
+}
+
+export interface AcceptStockReceiptRequest {
+  items: AcceptStockReceiptItemRequest[]
 }

@@ -16,6 +16,12 @@ export class CreateProductDto {
   @MinLength(1)
   name: string;
 
+  @ApiPropertyOptional({ example: '256GB, ko\'k rang' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string;
+
   @ApiProperty({ example: '665f1c2b9a3f4e5d6a7b8c9d' })
   @IsMongoId()
   categoryId: string;
@@ -36,7 +42,13 @@ export class CreateProductDto {
   isActive?: boolean;
 }
 
-export class UpdateProductDto extends PartialType(CreateProductDto) {}
+export class UpdateProductDto extends PartialType(CreateProductDto) {
+  @ApiPropertyOptional({ example: '256GB, ko\'k rang' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string;
+}
 
 export class SetProductStatusDto {
   @ApiProperty()
@@ -58,6 +70,12 @@ export class ProductResponseDto {
 
   @ApiProperty()
   name: string;
+
+  @ApiProperty({ example: 'MXS-000001' })
+  code: string;
+
+  @ApiProperty()
+  description: string;
 
   @ApiProperty({ type: ProductRelationDto })
   category: ProductRelationDto;

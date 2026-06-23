@@ -8,6 +8,8 @@ export interface ProductRelation {
 export interface ProductRecord {
   id: string
   name: string
+  code: string
+  description: string
   category: ProductRelation
   brand: ProductRelation
   image: string
@@ -20,6 +22,7 @@ export type ProductsListResponse = PaginatedResponse<ProductRecord>
 
 export interface CreateProductRequest {
   name: string
+  description?: string
   categoryId: string
   brandId: string
   image?: string

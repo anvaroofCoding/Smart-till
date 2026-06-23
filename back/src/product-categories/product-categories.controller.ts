@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { ProductCategoryQueryDto } from './dto/product-category-query.dto';
 import {
   CreateProductCategoryDto,
   ProductCategoryResponseDto,
@@ -33,8 +33,8 @@ export class ProductCategoriesController {
 
   @Get()
   @ApiOperation({ summary: 'Maxsulot kategoriyalari ro\'yxati' })
-  findAll(@Query() pagination: PaginationDto) {
-    return this.productCategoriesService.findAll(pagination);
+  findAll(@Query() query: ProductCategoryQueryDto) {
+    return this.productCategoriesService.findAll(query);
   }
 
   @Get(':id')

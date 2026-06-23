@@ -39,6 +39,7 @@ const BRAND_PATH = '/maxsulotlar/brend'
 
 export interface ProductFormValues {
   name: string
+  description: string
   categoryId: string
   brandId: string
   image: string
@@ -47,6 +48,7 @@ export interface ProductFormValues {
 
 export const emptyProductForm: ProductFormValues = {
   name: '',
+  description: '',
   categoryId: '',
   brandId: '',
   image: '',
@@ -56,6 +58,7 @@ export const emptyProductForm: ProductFormValues = {
 export function productToFormValues(product: ProductRecord): ProductFormValues {
   return {
     name: product.name,
+    description: product.description ?? '',
     categoryId: product.category.id,
     brandId: product.brand.id,
     image: product.image,
@@ -75,6 +78,7 @@ export function buildProductPayload(
 ): CreateProductRequest {
   return {
     name: values.name.trim(),
+    description: values.description.trim(),
     categoryId: values.categoryId,
     brandId: values.brandId,
     image: values.image.trim(),
@@ -167,7 +171,8 @@ export function ProductForm({
         <CardHeader>
           <CardTitle>Asosiy ma&apos;lumotlar</CardTitle>
           <CardDescription>
-            Nom, kategoriya va brend majburiy. Rasm ixtiyoriy.
+            Nom, kategoriya va brend majburiy. Maxsulot kodi saqlanganda
+            avtomatik beriladi. Rasm ixtiyoriy.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -185,6 +190,38 @@ export function ProductForm({
                 placeholder="Masalan: Samsung Galaxy A55"
                 disabled={isSaving}
                 autoFocus
+              />
+            </Field>
+
+            {mode === 'edit' && product?.code ? (
+              <Field>
+                <FieldLabel htmlFor="product-code">Maxsulot kodi</FieldLabel>
+                <Input
+                  id="product-code"
+                  value={product.code}
+                  readOnly
+                  disabled
+                  className="bg-muted font-mono"
+                />
+                <p className="text-muted-foreground text-xs">
+                  Kod tizim tomonidan beriladi va o&apos;zgartirilmaydi.
+                </p>
+              </Field>
+            ) : null}
+
+            <Field>
+              <FieldLabel htmlFor="product-description">Izoh</FieldLabel>
+              <Input
+                id="product-description"
+                value={form.description}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder="Qisqa izoh"
+                disabled={isSaving}
               />
             </Field>
 

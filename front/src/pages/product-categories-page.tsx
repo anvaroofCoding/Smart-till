@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   CategoryFormDialog,
   type CategoryFormValues,
 } from '@/components/product-categories/category-form-dialog'
+import {
+  emptyCategoryTableFilters,
+  categoryFiltersToQueryParams,
+  type CategoryTableFilters,
+} from '@/components/product-categories/category-table-filters'
+import { CategoryTableFiltersRow } from '@/components/product-categories/category-table-filters-row'
 import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
 import { CatalogDeleteButton } from '@/components/shared/catalog-delete-button'
 import { AppIcon } from '@/components/icons/app-icon'
@@ -19,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -30,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
@@ -46,7 +52,14 @@ import {
 } from '@/store/api/product-categories.api'
 import type { ProductCategoryRecord } from '@/types/product-category.types'
 
-const TABLE_HEADERS = ['№', 'Nomi', 'Izoh', 'Holat', 'Amallar']
+const TABLE_HEADERS = [
+  '№',
+  'ID',
+  'Kategoriya nomi',
+  'Izoh',
+  'Holat',
+  'Amallar',
+] as const
 
 function CategoryActiveSwitch({
   category,
@@ -84,17 +97,26 @@ function CategoryActiveSwitch({
 }
 
 export function ProductCategoriesPage() {
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<CategoryTableFilters>(
+    emptyCategoryTableFilters,
+  )
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [editingCategory, setEditingCategory] =
     useState<ProductCategoryRecord | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const { page, perPage, setPage, setPerPage } = useListPagination(search)
+
+  const debouncedFilters = useDebouncedValue(filters, 300)
+  const filterQuery = useMemo(
+    () => categoryFiltersToQueryParams(debouncedFilters),
+    [debouncedFilters],
+  )
+  const filterKey = useMemo(() => JSON.stringify(filterQuery), [filterQuery])
+  const { page, perPage, setPage, setPerPage } = useListPagination(filterKey)
 
   const categoriesQuery = useGetProductCategoriesQuery({
-    search: search.trim() || undefined,
+    ...filterQuery,
     page,
     perPage,
   })
@@ -126,6 +148,10 @@ export function ProductCategoriesPage() {
       getApiErrorMessage(categoriesQuery.error, "Ro'yxatni yuklab bo'lmadi"),
     )
   }, [categoriesQuery.error])
+
+  function handleFilterChange(patch: Partial<CategoryTableFilters>) {
+    setFilters((prev) => ({ ...prev, ...patch }))
+  }
 
   function openCreateDialog() {
     setDialogMode('create')
@@ -210,7 +236,8 @@ export function ProductCategoriesPage() {
             Maxsulot kategoriyasi
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Onlayn kiritish uchun. Nom majburiy, izoh va holat ixtiyoriy.
+            Jadval ustunlari ostidagi filterlar orqali qidirish. Nom majburiy,
+            izoh va holat ixtiyoriy.
           </p>
         </div>
         <Button onClick={openCreateDialog}>
@@ -227,25 +254,12 @@ export function ProductCategoriesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="relative w-full max-w-md shrink-0">
-            <AppIcon
-              name="search"
-              className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2"
-            />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish"
-              className="pl-9"
-            />
-          </div>
-
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
-                columns={5}
+                columns={TABLE_HEADERS.length}
                 rows={6}
-                headers={TABLE_HEADERS}
+                headers={[...TABLE_HEADERS]}
               />
             ) : (
               <Table>
@@ -266,12 +280,17 @@ export function ProductCategoriesPage() {
                       </TableHead>
                     ))}
                   </TableRow>
+                  <CategoryTableFiltersRow
+                    filters={filters}
+                    disabled={showTableRefreshing}
+                    onChange={handleFilterChange}
+                  />
                 </TableHeader>
                 <TableBody>
                   {categories.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={TABLE_HEADERS.length}
                         className="text-muted-foreground h-24 text-center"
                       >
                         Kategoriyalar topilmadi
@@ -279,9 +298,11 @@ export function ProductCategoriesPage() {
                     </TableRow>
                   ) : (
                     categories.map((category, index) => {
-                      const page = categoriesQuery.data?.meta.page ?? 1
-                      const perPage = categoriesQuery.data?.meta.perPage ?? 50
-                      const rowNumber = (page - 1) * perPage + index + 1
+                      const currentPage = categoriesQuery.data?.meta.page ?? 1
+                      const currentPerPage =
+                        categoriesQuery.data?.meta.perPage ?? 50
+                      const rowNumber =
+                        (currentPage - 1) * currentPerPage + index + 1
 
                       return (
                         <TableRow
@@ -290,6 +311,9 @@ export function ProductCategoriesPage() {
                         >
                           <TableCell className="text-muted-foreground text-center tabular-nums">
                             {rowNumber}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-[88px] truncate font-mono text-xs">
+                            {category.id.slice(-8)}
                           </TableCell>
                           <TableCell className="font-medium">
                             {category.name}

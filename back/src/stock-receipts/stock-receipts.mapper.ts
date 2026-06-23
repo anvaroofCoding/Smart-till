@@ -27,6 +27,12 @@ export function toStockReceiptResponse(
   const items = (receipt.items ?? []).map((item) => {
     const quantity = item.quantity ?? 0;
     const unitPrice = item.unitPrice ?? 0;
+    const receivedQuantity =
+      item.receivedQuantity !== undefined ? item.receivedQuantity : undefined;
+    const effectiveQuantity =
+      receipt.status === 'completed' && receivedQuantity !== undefined
+        ? receivedQuantity
+        : quantity;
     const subdoc = item as typeof item & { _id?: Types.ObjectId };
 
     return {
@@ -35,7 +41,8 @@ export function toStockReceiptResponse(
       productName: item.productName,
       quantity,
       unitPrice,
-      totalPrice: quantity * unitPrice,
+      receivedQuantity,
+      totalPrice: effectiveQuantity * unitPrice,
     };
   });
 
@@ -56,6 +63,7 @@ export function toStockReceiptResponse(
     exchangeRate: receipt.exchangeRate,
     notes: receipt.notes ?? '',
     status: receipt.status,
+    submittedAt: receipt.submittedAt,
     items,
     itemsCount: items.length,
     totalAmount,

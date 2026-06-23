@@ -6,12 +6,17 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { getProductCountsByField } from '../common/utils/product-usage-counts';
-import { PaginationDto } from '../common/dto/pagination.dto';
-import { Product, ProductDocument } from '../products/schemas/product.schema';
+import {
+  buildIdFilter,
+  escapeRegex,
+  parseCreatedAtFilter,
+} from '../common/utils/list-filter.utils';
 import {
   CreateProductBrandDto,
   UpdateProductBrandDto,
 } from './dto/product-brand.dto';
+import { ProductBrandQueryDto } from './dto/product-brand-query.dto';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { toProductBrandResponse } from './product-brands.mapper';
 import {
   ProductBrand,
@@ -44,20 +49,12 @@ export class ProductBrandsService {
     });
   }
 
-  async findAll(pagination: PaginationDto) {
-    const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+  async findAll(query: ProductBrandQueryDto) {
+    const page = query.page ?? 1;
+    const perPage = query.perPage ?? 20;
     const skip = (page - 1) * perPage;
 
-    const filter: {
-      $or?: Array<Record<string, RegExp>>;
-    } = {};
-
-    if (pagination.search?.trim()) {
-      const search = pagination.search.trim();
-      const regex = new RegExp(search, 'i');
-      filter.$or = [{ name: regex }, { description: regex }];
-    }
+    const filter = this.buildListFilter(query);
 
     const [items, total] = await Promise.all([
       this.brandModel
@@ -169,8 +166,45 @@ export class ProductBrandsService {
 
     await this.brandModel.findByIdAndDelete(id).exec();
   }
-}
 
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  private buildListFilter(query: ProductBrandQueryDto): Record<string, unknown> {
+    const filter: Record<string, unknown> = {};
+    const and: Array<Record<string, unknown>> = [];
+
+    const idFilter = buildIdFilter(query.id);
+    if (idFilter) and.push(idFilter);
+
+    if (query.name?.trim()) {
+      and.push({ name: new RegExp(escapeRegex(query.name.trim()), 'i') });
+    }
+
+    if (query.description?.trim()) {
+      and.push({
+        description: new RegExp(escapeRegex(query.description.trim()), 'i'),
+      });
+    }
+
+    if (query.isActive !== undefined) {
+      and.push({ isActive: query.isActive });
+    }
+
+    const createdAtRange = parseCreatedAtFilter(query.createdAt);
+    if (createdAtRange) {
+      and.push({ createdAt: createdAtRange });
+    }
+
+    if (query.search?.trim()) {
+      const search = escapeRegex(query.search.trim());
+      const regex = new RegExp(search, 'i');
+      and.push({
+        $or: [{ name: regex }, { description: regex }],
+      });
+    }
+
+    if (and.length > 0) {
+      filter.$and = and;
+    }
+
+    return filter;
+  }
 }

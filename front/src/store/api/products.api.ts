@@ -17,6 +17,14 @@ export interface ProductsQueryParams {
   search?: string
   page?: number
   perPage?: number
+  id?: string
+  code?: string
+  name?: string
+  description?: string
+  brandId?: string
+  categoryId?: string
+  isActive?: boolean
+  createdAt?: string
 }
 
 export const productsApi = baseApi.injectEndpoints({

@@ -10,9 +10,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
+interface TruncatedDescriptionCellProps {
+  title: string
+  description: string
+  dialogSubtitle: string
+  lines?: 1 | 2
+  className?: string
+}
+
 function useIsTextTruncated<T extends HTMLElement>(
   ref: React.RefObject<T | null>,
   text: string,
+  lines: 1 | 2,
 ) {
   const [isTruncated, setIsTruncated] = useState(false)
 
@@ -21,7 +30,11 @@ function useIsTextTruncated<T extends HTMLElement>(
     if (!element) return
 
     function checkTruncation() {
-      setIsTruncated(element.scrollWidth > element.clientWidth + 1)
+      if (lines === 2) {
+        setIsTruncated(element.scrollHeight > element.clientHeight + 1)
+      } else {
+        setIsTruncated(element.scrollWidth > element.clientWidth + 1)
+      }
     }
 
     checkTruncation()
@@ -30,25 +43,21 @@ function useIsTextTruncated<T extends HTMLElement>(
     observer.observe(element)
 
     return () => observer.disconnect()
-  }, [ref, text])
+  }, [ref, text, lines])
 
   return isTruncated
-}
-
-interface TruncatedDescriptionCellProps {
-  title: string
-  description: string
-  dialogSubtitle: string
 }
 
 export function TruncatedDescriptionCell({
   title,
   description,
   dialogSubtitle,
+  lines = 1,
+  className,
 }: TruncatedDescriptionCellProps) {
   const [viewOpen, setViewOpen] = useState(false)
   const textRef = useRef<HTMLParagraphElement>(null)
-  const isTruncated = useIsTextTruncated(textRef, description)
+  const isTruncated = useIsTextTruncated(textRef, description, lines)
 
   if (!description) {
     return <span className="text-muted-foreground">—</span>
@@ -56,10 +65,14 @@ export function TruncatedDescriptionCell({
 
   return (
     <>
-      <div className="max-w-[220px]">
+      <div className={className ?? 'max-w-[220px]'}>
         <p
           ref={textRef}
-          className="text-muted-foreground truncate text-sm"
+          className={
+            lines === 2
+              ? 'text-muted-foreground line-clamp-2 text-sm'
+              : 'text-muted-foreground truncate text-sm'
+          }
         >
           {description}
         </p>

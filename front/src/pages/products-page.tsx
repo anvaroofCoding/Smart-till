@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
 import { ProductImageThumb } from '@/components/products/product-image-thumb'
+import {
+  emptyProductTableFilters,
+  productFiltersToQueryParams,
+  type ProductTableFilters,
+} from '@/components/products/product-table-filters'
+import { ProductTableFiltersRow } from '@/components/products/products-table-filters-row'
+import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import {
   DataTableSkeleton,
@@ -16,7 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -27,13 +33,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
+import { formatDateDisplay } from '@/lib/date-format'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
+import { useGetProductBrandsQuery } from '@/store/api/product-brands.api'
+import { useGetProductCategoriesQuery } from '@/store/api/product-categories.api'
 import {
   useGetProductsQuery,
   useSetProductStatusMutation,
@@ -45,13 +55,17 @@ const PRODUCT_CREATE_PATH = '/maxsulotlar/ro-yxat/yaratish'
 
 const TABLE_HEADERS = [
   '№',
-  'Rasm',
-  'Nomi',
-  'Kategoriya',
+  'ID',
+  'Maxsulot kodi',
   'Brend',
+  'Maxsulot nomi',
+  'Izoh',
   'Holat',
+  'Kategoriya',
+  'Saqlangan vaqti',
+  'Rasm',
   'Amallar',
-]
+] as const
 
 function ProductActiveSwitch({
   product,
@@ -89,12 +103,24 @@ function ProductActiveSwitch({
 }
 
 export function ProductsPage() {
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<ProductTableFilters>(
+    emptyProductTableFilters,
+  )
   const [togglingId, setTogglingId] = useState<string | null>(null)
-  const { page, perPage, setPage, setPerPage } = useListPagination(search)
+
+  const debouncedFilters = useDebouncedValue(filters, 300)
+  const filterQuery = useMemo(
+    () => productFiltersToQueryParams(debouncedFilters),
+    [debouncedFilters],
+  )
+  const filterKey = useMemo(() => JSON.stringify(filterQuery), [filterQuery])
+  const { page, perPage, setPage, setPerPage } = useListPagination(filterKey)
+
+  const categoriesQuery = useGetProductCategoriesQuery({ page: 1, perPage: 100 })
+  const brandsQuery = useGetProductBrandsQuery({ page: 1, perPage: 100 })
 
   const productsQuery = useGetProductsQuery({
-    search: search.trim() || undefined,
+    ...filterQuery,
     page,
     perPage,
   })
@@ -123,6 +149,10 @@ export function ProductsPage() {
     )
   }, [productsQuery.error])
 
+  function handleFilterChange(patch: Partial<ProductTableFilters>) {
+    setFilters((prev) => ({ ...prev, ...patch }))
+  }
+
   async function handleToggleActive(product: ProductRecord, isActive: boolean) {
     setTogglingId(product.id)
     try {
@@ -142,8 +172,8 @@ export function ProductsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Maxsulotlar</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Onlayn kiritish uchun. Nom, kategoriya va brend majburiy. Rasm
-            ixtiyoriy.
+            Jadval ustunlari ostidagi filterlar orqali qidirish. Barcha filterlar
+            bir vaqtda qo&apos;llanadi.
           </p>
         </div>
         <Button asChild>
@@ -162,25 +192,12 @@ export function ProductsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="relative w-full max-w-md shrink-0">
-            <AppIcon
-              name="search"
-              className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2"
-            />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish"
-              className="pl-9"
-            />
-          </div>
-
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
-                columns={7}
+                columns={TABLE_HEADERS.length}
                 rows={6}
-                headers={TABLE_HEADERS}
+                headers={[...TABLE_HEADERS]}
               />
             ) : (
               <Table>
@@ -194,19 +211,28 @@ export function ProductsPage() {
                             ? 'w-12 text-center'
                             : header === 'Amallar'
                               ? 'text-right'
-                              : undefined
+                              : header === 'Rasm'
+                                ? 'w-14'
+                                : undefined
                         }
                       >
                         {header}
                       </TableHead>
                     ))}
                   </TableRow>
+                  <ProductTableFiltersRow
+                    filters={filters}
+                    brands={brandsQuery.data?.data ?? []}
+                    categories={categoriesQuery.data?.data ?? []}
+                    disabled={showTableRefreshing}
+                    onChange={handleFilterChange}
+                  />
                 </TableHeader>
                 <TableBody>
                   {products.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={TABLE_HEADERS.length}
                         className="text-muted-foreground h-24 text-center"
                       >
                         Maxsulotlar topilmadi
@@ -214,9 +240,10 @@ export function ProductsPage() {
                     </TableRow>
                   ) : (
                     products.map((product, index) => {
-                      const page = productsQuery.data?.meta.page ?? 1
-                      const perPage = productsQuery.data?.meta.perPage ?? 20
-                      const rowNumber = (page - 1) * perPage + index + 1
+                      const currentPage = productsQuery.data?.meta.page ?? 1
+                      const currentPerPage = productsQuery.data?.meta.perPage ?? 20
+                      const rowNumber =
+                        (currentPage - 1) * currentPerPage + index + 1
 
                       return (
                         <TableRow
@@ -226,22 +253,26 @@ export function ProductsPage() {
                           <TableCell className="text-muted-foreground text-center tabular-nums">
                             {rowNumber}
                           </TableCell>
-                          <TableCell>
-                            <ProductImageThumb
-                              image={product.image}
-                              name={product.name}
-                            />
+                          <TableCell className="text-muted-foreground max-w-[88px] truncate font-mono text-xs">
+                            {product.id.slice(-8)}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {product.name}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {product.category.name}
-                            </Badge>
+                          <TableCell className="text-sm">
+                            {product.code || '—'}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{product.brand.name}</Badge>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] font-medium">
+                            <span className="line-clamp-2">{product.name}</span>
+                          </TableCell>
+                          <TableCell className="max-w-[160px] text-sm">
+                            <TruncatedDescriptionCell
+                              title={product.name}
+                              description={product.description}
+                              dialogSubtitle="Maxsulot izohi"
+                              lines={2}
+                              className="max-w-[160px]"
+                            />
                           </TableCell>
                           <TableCell>
                             <ProductActiveSwitch
@@ -250,6 +281,20 @@ export function ProductsPage() {
                               onToggle={(isActive) =>
                                 handleToggleActive(product, isActive)
                               }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {product.category.name}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                            {formatDateDisplay(product.createdAt) || '—'}
+                          </TableCell>
+                          <TableCell>
+                            <ProductImageThumb
+                              image={product.image}
+                              name={product.name}
                             />
                           </TableCell>
                           <TableCell className="text-right">

@@ -23,6 +23,8 @@ export function toProductResponse(product: ProductDocument): ProductResponseDto 
   return {
     id: product._id.toString(),
     name: product.name,
+    code: product.code ?? '',
+    description: product.description ?? '',
     category: resolveRelation(
       product.categoryId as Types.ObjectId | { _id: Types.ObjectId; name: string },
       product.categoryId as Types.ObjectId,

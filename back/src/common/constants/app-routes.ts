@@ -12,6 +12,7 @@ export const APP_PAGE_PATHS = [
   '/maxsulotlar/kategoriya',
   '/omborlar/maxsulotlar-soni',
   '/omborlar/ro-yxat',
+  '/omborlar/kirim-qabul',
   '/omborlar/maxsulot-kirim',
   '/transfer/transferlar',
   '/transfer/qabul-qilish',

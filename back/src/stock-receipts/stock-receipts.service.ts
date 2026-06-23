@@ -7,13 +7,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import {
-  emptyPaginatedMeta,
-  isWarehouseAllowed,
-  normalizeWarehouseId,
-  type UserWarehouseScope,
-} from '../common/utils/user-warehouse-scope';
+  buildIdFilter,
+  escapeRegex,
+  parseCreatedAtFilter,
+} from '../common/utils/list-filter.utils';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Supplier, SupplierDocument } from '../suppliers/schemas/supplier.schema';
 import { Warehouse, WarehouseDocument } from '../warehouses/schemas/warehouse.schema';
@@ -23,10 +21,18 @@ import {
 } from '../warehouse-stock/schemas/warehouse-stock.schema';
 import {
   AddStockReceiptItemDto,
+  AcceptStockReceiptDto,
   CreateStockReceiptDto,
   UpdateStockReceiptDto,
   UpdateStockReceiptItemDto,
 } from './dto/stock-receipt.dto';
+import { StockReceiptsQueryDto } from './dto/stock-receipts-query.dto';
+import {
+  emptyPaginatedMeta,
+  isWarehouseAllowed,
+  normalizeWarehouseId,
+  type UserWarehouseScope,
+} from '../common/utils/user-warehouse-scope';
 import { toStockReceiptResponse } from './stock-receipts.mapper';
 import {
   StockReceipt,
@@ -54,16 +60,6 @@ export class StockReceiptsService {
   ): Promise<StockReceiptDocument> {
     await this.ensureSupplierExists(dto.supplierId);
     await this.ensureWarehouseExists(dto.warehouseId);
-    if (process.env.DEBUG_WAREHOUSE_SCOPE === 'true') {
-      // eslint-disable-next-line no-console
-      console.log('stock-receipt.create scope', {
-        allWarehouses: scope?.allWarehouses,
-        warehouseIds: scope?.warehouseIds?.map((id) =>
-          normalizeWarehouseId(id),
-        ),
-        warehouseId: normalizeWarehouseId(dto.warehouseId),
-      });
-    }
     this.ensureWarehouseAllowed(scope, dto.warehouseId);
 
     return this.receiptModel.create({
@@ -78,32 +74,19 @@ export class StockReceiptsService {
     });
   }
 
-  async findAll(pagination: PaginationDto, scope?: UserWarehouseScope) {
+  async findAll(pagination: StockReceiptsQueryDto, scope?: UserWarehouseScope) {
     const page = pagination.page ?? 1;
     const perPage = pagination.perPage ?? 20;
     const skip = (page - 1) * perPage;
 
-    const filter: {
-      $or?: Array<Record<string, RegExp>>;
-      warehouseId?: { $in: Types.ObjectId[] };
-    } = {};
-
-    if (scope && !scope.allWarehouses) {
-      if (scope.warehouseIds.length === 0) {
-        return {
-          data: [],
-          meta: emptyPaginatedMeta(page, perPage),
-        };
-      }
-
-      filter.warehouseId = { $in: scope.warehouseIds };
+    if (scope && !scope.allWarehouses && scope.warehouseIds.length === 0) {
+      return {
+        data: [],
+        meta: emptyPaginatedMeta(page, perPage),
+      };
     }
 
-    if (pagination.search?.trim()) {
-      const search = pagination.search.trim();
-      const regex = new RegExp(search, 'i');
-      filter.$or = [{ name: regex }, { notes: regex }];
-    }
+    const filter = await this.buildListFilter(pagination, scope);
 
     const [items, total] = await Promise.all([
       this.receiptModel
@@ -144,7 +127,7 @@ export class StockReceiptsService {
 
   async findByIdResponse(id: string, scope?: UserWarehouseScope) {
     const receipt = await this.findById(id);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
     return toStockReceiptResponse(receipt);
   }
 
@@ -154,7 +137,7 @@ export class StockReceiptsService {
     scope?: UserWarehouseScope,
   ) {
     const receipt = await this.findEditableReceipt(id);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
 
     if (dto.name !== undefined) {
       const name = dto.name.trim();
@@ -197,7 +180,7 @@ export class StockReceiptsService {
     scope?: UserWarehouseScope,
   ) {
     const receipt = await this.findEditableReceipt(receiptId);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
     const product = await this.ensureProductExists(dto.productId);
 
     const existingItem = receipt.items.find(
@@ -229,7 +212,7 @@ export class StockReceiptsService {
     scope?: UserWarehouseScope,
   ) {
     const receipt = await this.findEditableReceipt(receiptId);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
     const item = this.findReceiptItem(receipt, itemId);
 
     if (dto.quantity !== undefined) {
@@ -251,7 +234,7 @@ export class StockReceiptsService {
     scope?: UserWarehouseScope,
   ) {
     const receipt = await this.findEditableReceipt(receiptId);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
     const itemIndex = receipt.items.findIndex(
       (item) =>
         (item as typeof item & { _id?: Types.ObjectId })._id?.toString() ===
@@ -268,9 +251,19 @@ export class StockReceiptsService {
     return this.findById(receiptId);
   }
 
-  async accept(receiptId: string, scope?: UserWarehouseScope) {
-    const receipt = await this.findEditableReceipt(receiptId);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+  async accept(
+    receiptId: string,
+    dto: AcceptStockReceiptDto,
+    scope?: UserWarehouseScope,
+  ) {
+    const receipt = await this.findInProgressReceipt(receiptId);
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
+
+    if (!receipt.submittedAt) {
+      throw new BadRequestException(
+        'Faqat yuborilgan kirimni qabul qilish mumkin',
+      );
+    }
 
     if (!receipt.items.length) {
       throw new BadRequestException(
@@ -278,16 +271,50 @@ export class StockReceiptsService {
       );
     }
 
-    const warehouseId = receipt.warehouseId;
+    if (dto.items.length !== receipt.items.length) {
+      throw new BadRequestException(
+        'Barcha maxsulotlar bo\'yicha qabul ma\'lumotini kiriting',
+      );
+    }
 
-    for (const item of receipt.items) {
+    const warehouseId = receipt.warehouseId;
+    let receivedCount = 0;
+
+    for (const entry of dto.items) {
+      const item = this.findReceiptItem(receipt, entry.itemId);
+
+      if (!entry.received) {
+        item.receivedQuantity = 0;
+        continue;
+      }
+
+      const receivedQuantity =
+        entry.receivedQuantity !== undefined
+          ? entry.receivedQuantity
+          : item.quantity;
+
+      if (receivedQuantity <= 0) {
+        throw new BadRequestException(
+          `${item.productName} uchun qabul miqdorini kiriting`,
+        );
+      }
+
+      if (receivedQuantity > item.quantity) {
+        throw new BadRequestException(
+          `${item.productName} uchun qabul miqdori buyurtmadan oshmasligi kerak`,
+        );
+      }
+
+      item.receivedQuantity = receivedQuantity;
+      receivedCount += 1;
+
       await this.stockModel.findOneAndUpdate(
         {
           warehouseId,
           productId: item.productId,
         },
         {
-          $inc: { quantity: item.quantity },
+          $inc: { quantity: receivedQuantity },
           $setOnInsert: {
             warehouseId,
             productId: item.productId,
@@ -297,20 +324,40 @@ export class StockReceiptsService {
       );
     }
 
+    if (receivedCount === 0) {
+      throw new BadRequestException('Kamida bitta maxsulotni qabul qiling');
+    }
+
+    receipt.markModified('items');
     receipt.status = 'completed';
     await receipt.save();
     return this.findById(receiptId);
   }
 
   async cancel(receiptId: string, scope?: UserWarehouseScope) {
-    const receipt = await this.findEditableReceipt(receiptId);
-    this.ensureWarehouseAllowed(scope, receipt.warehouseId.toString());
+    const receipt = await this.findInProgressReceipt(receiptId);
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
     receipt.status = 'cancelled';
     await receipt.save();
     return this.findById(receiptId);
   }
 
-  private async findEditableReceipt(id: string): Promise<StockReceiptDocument> {
+  async submit(receiptId: string, scope?: UserWarehouseScope) {
+    const receipt = await this.findEditableReceipt(receiptId);
+    this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
+
+    if (!receipt.items.length) {
+      throw new BadRequestException(
+        'Kamida bitta maxsulot qo\'shilgan bo\'lishi kerak',
+      );
+    }
+
+    receipt.submittedAt = new Date();
+    await receipt.save();
+    return this.findById(receiptId);
+  }
+
+  private async findInProgressReceipt(id: string): Promise<StockReceiptDocument> {
     const receipt = await this.receiptModel.findById(id).exec();
 
     if (!receipt) {
@@ -319,7 +366,19 @@ export class StockReceiptsService {
 
     if (receipt.status !== 'in_progress') {
       throw new ConflictException(
-        'Faqat jarayondagi kirimni tahrirlash mumkin',
+        'Faqat jarayondagi kirim bilan ishlash mumkin',
+      );
+    }
+
+    return receipt;
+  }
+
+  private async findEditableReceipt(id: string): Promise<StockReceiptDocument> {
+    const receipt = await this.findInProgressReceipt(id);
+
+    if (receipt.submittedAt) {
+      throw new ConflictException(
+        'Yuborilgan kirimni tahrirlab bo\'lmaydi',
       );
     }
 
@@ -383,4 +442,153 @@ export class StockReceiptsService {
     }
     return product;
   }
+
+  private async buildListFilter(
+    query: StockReceiptsQueryDto,
+    scope?: UserWarehouseScope,
+  ): Promise<Record<string, unknown>> {
+    const filter: Record<string, unknown> = {};
+    const and: Array<Record<string, unknown>> = [];
+
+    if (scope && !scope.allWarehouses) {
+      and.push({ warehouseId: { $in: scope.warehouseIds } });
+    }
+
+    const idFilter = buildIdFilter(query.id);
+    if (idFilter) and.push(idFilter);
+
+    if (query.name?.trim()) {
+      and.push({ name: new RegExp(escapeRegex(query.name.trim()), 'i') });
+    }
+
+    if (query.status) {
+      and.push({ status: query.status });
+    }
+
+    if (query.paymentType) {
+      and.push({ paymentType: query.paymentType });
+    }
+
+    if (query.supplierId) {
+      and.push({ supplierId: new Types.ObjectId(query.supplierId) });
+    } else if (query.supplierName?.trim()) {
+      const suppliers = await this.supplierModel
+        .find({
+          name: new RegExp(escapeRegex(query.supplierName.trim()), 'i'),
+        })
+        .select('_id')
+        .exec();
+
+      and.push({
+        supplierId: {
+          $in: suppliers.map((supplier) => supplier._id),
+        },
+      });
+    }
+
+    if (query.warehouseId) {
+      and.push({ warehouseId: new Types.ObjectId(query.warehouseId) });
+    } else if (query.warehouseName?.trim()) {
+      const warehouses = await this.warehouseModel
+        .find({
+          name: new RegExp(escapeRegex(query.warehouseName.trim()), 'i'),
+        })
+        .select('_id')
+        .exec();
+
+      and.push({
+        warehouseId: {
+          $in: warehouses.map((warehouse) => warehouse._id),
+        },
+      });
+    }
+
+    const createdAtRange = parseCreatedAtFilter(query.createdAt);
+    if (createdAtRange) {
+      and.push({ createdAt: createdAtRange });
+    }
+
+    if (query.exchangeRate !== undefined && !Number.isNaN(query.exchangeRate)) {
+      and.push({
+        exchangeRate: {
+          $gte: query.exchangeRate - 0.0001,
+          $lte: query.exchangeRate + 0.0001,
+        },
+      });
+    }
+
+    if (query.totalAmount !== undefined && !Number.isNaN(query.totalAmount)) {
+      and.push({
+        $expr: {
+          $let: {
+            vars: { total: buildReceiptItemsTotalExpr() },
+            in: {
+              $and: [
+                { $gte: ['$$total', query.totalAmount! - 0.01] },
+                { $lte: ['$$total', query.totalAmount! + 0.01] },
+              ],
+            },
+          },
+        },
+      });
+    }
+
+    if (query.submitted === true) {
+      and.push({ submittedAt: { $ne: null } });
+    } else if (query.submitted === false) {
+      and.push({
+        $or: [{ submittedAt: null }, { submittedAt: { $exists: false } }],
+      });
+    }
+
+    if (query.search?.trim()) {
+      const search = escapeRegex(query.search.trim());
+      const regex = new RegExp(search, 'i');
+      and.push({
+        $or: [{ name: regex }, { notes: regex }],
+      });
+    }
+
+    if (and.length > 0) {
+      filter.$and = and;
+    }
+
+    return filter;
+  }
+}
+
+function buildReceiptItemsTotalExpr() {
+  return {
+    $reduce: {
+      input: { $ifNull: ['$items', []] },
+      initialValue: 0,
+      in: {
+        $add: [
+          '$$value',
+          {
+            $multiply: [
+              {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $eq: ['$status', 'completed'] },
+                      {
+                        $ne: [
+                          { $ifNull: ['$$this.receivedQuantity', null] },
+                          null,
+                        ],
+                      },
+                    ],
+                  },
+                  then: { $ifNull: ['$$this.receivedQuantity', 0] },
+                  else: { $ifNull: ['$$this.quantity', 0] },
+                },
+              },
+              { $ifNull: ['$$this.unitPrice', 0] },
+            ],
+          },
+        ],
+      },
+    },
+  };
 }

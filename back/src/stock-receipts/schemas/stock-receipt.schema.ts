@@ -27,6 +27,9 @@ export class StockReceiptItem {
 
   @Prop({ required: true, min: 0 })
   unitPrice: number;
+
+  @Prop({ min: 0 })
+  receivedQuantity?: number;
 }
 
 export const StockReceiptItemSchema =
@@ -66,6 +69,9 @@ export class StockReceipt {
   @Prop({ type: [StockReceiptItemSchema], default: [] })
   items: StockReceiptItem[];
 
+  @Prop({ type: Date })
+  submittedAt?: Date;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -77,3 +83,4 @@ StockReceiptSchema.index({ status: 1 });
 StockReceiptSchema.index({ supplierId: 1 });
 StockReceiptSchema.index({ warehouseId: 1 });
 StockReceiptSchema.index({ createdAt: -1 });
+StockReceiptSchema.index({ submittedAt: 1 });

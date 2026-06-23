@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import {
   ProductBrand,
   ProductBrandDocument,
@@ -16,6 +15,7 @@ import {
   ProductCategoryDocument,
 } from '../product-categories/schemas/product-category.schema';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { ProductQueryDto } from './dto/product-query.dto';
 import { toProductResponse } from './products.mapper';
 import { Product, ProductDocument } from './schemas/product.schema';
 
@@ -46,6 +46,8 @@ export class ProductsService {
 
     const product = await this.productModel.create({
       name,
+      code: await this.generateProductCode(),
+      description: dto.description?.trim() ?? '',
       categoryId: new Types.ObjectId(dto.categoryId),
       brandId: new Types.ObjectId(dto.brandId),
       image: dto.image?.trim() ?? '',
@@ -55,30 +57,12 @@ export class ProductsService {
     return this.findById(product._id.toString());
   }
 
-  async findAll(pagination: PaginationDto) {
-    const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+  async findAll(query: ProductQueryDto) {
+    const page = query.page ?? 1;
+    const perPage = query.perPage ?? 20;
     const skip = (page - 1) * perPage;
 
-    const filter: {
-      $or?: Array<Record<string, unknown>>;
-    } = {};
-
-    if (pagination.search?.trim()) {
-      const search = pagination.search.trim();
-      const regex = new RegExp(search, 'i');
-
-      const [categoryIds, brandIds] = await Promise.all([
-        this.categoryModel.find({ name: regex }).distinct('_id').exec(),
-        this.brandModel.find({ name: regex }).distinct('_id').exec(),
-      ]);
-
-      filter.$or = [
-        { name: regex },
-        { categoryId: { $in: categoryIds } },
-        { brandId: { $in: brandIds } },
-      ];
-    }
+    const filter = await this.buildListFilter(query);
 
     const [items, total] = await Promise.all([
       this.productModel
@@ -101,6 +85,87 @@ export class ProductsService {
         totalPages: Math.ceil(total / perPage) || 1,
       },
     };
+  }
+
+  private async buildListFilter(
+    query: ProductQueryDto,
+  ): Promise<Record<string, unknown>> {
+    const filter: Record<string, unknown> = {};
+    const and: Array<Record<string, unknown>> = [];
+
+    if (query.id?.trim()) {
+      const idSearch = escapeRegex(query.id.trim());
+      if (Types.ObjectId.isValid(query.id.trim())) {
+        and.push({ _id: new Types.ObjectId(query.id.trim()) });
+      } else {
+        and.push({
+          $expr: {
+            $regexMatch: {
+              input: { $toString: '$_id' },
+              regex: idSearch,
+              options: 'i',
+            },
+          },
+        });
+      }
+    }
+
+    if (query.code?.trim()) {
+      and.push({ code: new RegExp(escapeRegex(query.code.trim()), 'i') });
+    }
+
+    if (query.name?.trim()) {
+      and.push({ name: new RegExp(escapeRegex(query.name.trim()), 'i') });
+    }
+
+    if (query.description?.trim()) {
+      and.push({
+        description: new RegExp(escapeRegex(query.description.trim()), 'i'),
+      });
+    }
+
+    if (query.brandId) {
+      and.push({ brandId: new Types.ObjectId(query.brandId) });
+    }
+
+    if (query.categoryId) {
+      and.push({ categoryId: new Types.ObjectId(query.categoryId) });
+    }
+
+    if (query.isActive !== undefined) {
+      and.push({ isActive: query.isActive });
+    }
+
+    const createdAtRange = parseCreatedAtFilter(query.createdAt);
+    if (createdAtRange) {
+      and.push({ createdAt: createdAtRange });
+    }
+
+    if (query.search?.trim()) {
+      const search = query.search.trim();
+      const regex = new RegExp(escapeRegex(search), 'i');
+
+      const [categoryIds, brandIds] = await Promise.all([
+        this.categoryModel.find({ name: regex }).distinct('_id').exec(),
+        this.brandModel.find({ name: regex }).distinct('_id').exec(),
+      ]);
+
+      and.push({
+        $or: [
+          { name: regex },
+          { code: regex },
+          { description: regex },
+          { categoryId: { $in: categoryIds } },
+          { brandId: { $in: brandIds } },
+        ],
+      });
+    }
+
+    if (and.length > 0) {
+      filter.$and = and;
+    }
+
+    return filter;
   }
 
   async findById(id: string): Promise<ProductDocument> {
@@ -151,6 +216,10 @@ export class ProductsService {
       }
 
       product.name = name;
+    }
+
+    if (dto.description !== undefined) {
+      product.description = dto.description.trim();
     }
 
     if (dto.image !== undefined) {
@@ -206,8 +275,73 @@ export class ProductsService {
       throw new BadRequestException('Rasm noto\'g\'ri formatda');
     }
   }
+
+  private async generateProductCode(): Promise<string> {
+    const prefix = 'MXS-';
+    const padLength = 6;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const last = await this.productModel
+        .findOne({ code: { $regex: `^${prefix}\\d+$` } })
+        .sort({ code: -1 })
+        .collation({ locale: 'en', numericOrdering: true })
+        .select('code')
+        .lean()
+        .exec();
+
+      let next = 1;
+      if (last?.code) {
+        const parsed = Number.parseInt(last.code.slice(prefix.length), 10);
+        if (!Number.isNaN(parsed)) {
+          next = parsed + 1 + attempt;
+        }
+      } else {
+        next = 1 + attempt;
+      }
+
+      const code = `${prefix}${String(next).padStart(padLength, '0')}`;
+      const exists = await this.productModel.exists({ code }).exec();
+      if (!exists) {
+        return code;
+      }
+    }
+
+    throw new ConflictException('Maxsulot kodi yaratib bo\'lmadi');
+  }
 }
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function parseCreatedAtFilter(
+  value?: string,
+): { $gte: Date; $lt: Date } | null {
+  if (!value?.trim()) return null;
+
+  const trimmed = value.trim();
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const dotted = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
+  const dashed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+
+  if (dotted) {
+    day = Number(dotted[1]);
+    month = Number(dotted[2]);
+    year = Number(dotted[3]);
+  } else if (dashed) {
+    year = Number(dashed[1]);
+    month = Number(dashed[2]);
+    day = Number(dashed[3]);
+  } else {
+    return null;
+  }
+
+  const start = new Date(year, month - 1, day);
+  if (Number.isNaN(start.getTime())) return null;
+
+  const end = new Date(year, month - 1, day + 1);
+  return { $gte: start, $lt: end };
 }

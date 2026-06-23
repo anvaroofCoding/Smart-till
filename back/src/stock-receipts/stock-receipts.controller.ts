@@ -30,7 +30,7 @@ import {
 
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { StockReceiptsQueryDto } from './dto/stock-receipts-query.dto';
 
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
@@ -39,6 +39,8 @@ import { UsersService } from '../users/users.service';
 import {
 
   AddStockReceiptItemDto,
+
+  AcceptStockReceiptDto,
 
   CreateStockReceiptDto,
 
@@ -78,7 +80,7 @@ export class StockReceiptsController {
 
   async findAll(
 
-    @Query() pagination: PaginationDto,
+    @Query() pagination: StockReceiptsQueryDto,
 
     @CurrentUser() user: JwtPayload,
 
@@ -232,11 +234,11 @@ export class StockReceiptsController {
 
 
 
-  @Post(':id/accept')
+  @Post(':id/submit')
 
-  @ApiOperation({ summary: 'Kirimni qabul qilish' })
+  @ApiOperation({ summary: 'Kirimni yuborish' })
 
-  async accept(
+  async submit(
 
     @Param('id') id: string,
 
@@ -246,7 +248,31 @@ export class StockReceiptsController {
 
     const scope = await this.usersService.getWarehouseScope(user.sub);
 
-    await this.stockReceiptsService.accept(id, scope);
+    await this.stockReceiptsService.submit(id, scope);
+
+    return this.stockReceiptsService.findByIdResponse(id, scope);
+
+  }
+
+
+
+  @Post(':id/accept')
+
+  @ApiOperation({ summary: 'Kirimni qabul qilish' })
+
+  async accept(
+
+    @Param('id') id: string,
+
+    @Body() dto: AcceptStockReceiptDto,
+
+    @CurrentUser() user: JwtPayload,
+
+  ): Promise<StockReceiptResponseDto> {
+
+    const scope = await this.usersService.getWarehouseScope(user.sub);
+
+    await this.stockReceiptsService.accept(id, dto, scope);
 
     return this.stockReceiptsService.findByIdResponse(id, scope);
 

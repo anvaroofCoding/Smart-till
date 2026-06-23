@@ -10,6 +10,12 @@ export class Product {
   @Prop({ required: true, trim: true })
   name: string;
 
+  @Prop({ trim: true, default: '' })
+  code: string;
+
+  @Prop({ trim: true, default: '' })
+  description: string;
+
   @Prop({ type: Types.ObjectId, ref: ProductCategory.name, required: true })
   categoryId: Types.ObjectId;
 
@@ -29,6 +35,7 @@ export class Product {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
 ProductSchema.index({ name: 'text' });
+ProductSchema.index({ code: 1 });
 ProductSchema.index({ categoryId: 1 });
 ProductSchema.index({ brandId: 1 });
 ProductSchema.index({ isActive: 1 });

@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
+  IsBoolean,
   IsEnum,
   IsMongoId,
   IsNumber,
@@ -8,6 +10,7 @@ import {
   IsString,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import {
   RECEIPT_PAYMENT_TYPES,
@@ -110,6 +113,9 @@ export class StockReceiptItemResponseDto {
 
   @ApiProperty()
   totalPrice: number;
+
+  @ApiPropertyOptional()
+  receivedQuantity?: number;
 }
 
 export class StockReceiptResponseDto {
@@ -137,6 +143,9 @@ export class StockReceiptResponseDto {
   @ApiProperty({ enum: RECEIPT_STATUSES })
   status: ReceiptStatus;
 
+  @ApiPropertyOptional()
+  submittedAt?: Date;
+
   @ApiProperty({ type: [StockReceiptItemResponseDto] })
   items: StockReceiptItemResponseDto[];
 
@@ -151,4 +160,29 @@ export class StockReceiptResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+}
+
+export class AcceptStockReceiptItemDto {
+  @ApiProperty()
+  @IsMongoId()
+  itemId: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  received: boolean;
+
+  @ApiPropertyOptional({ example: 5 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0)
+  receivedQuantity?: number;
+}
+
+export class AcceptStockReceiptDto {
+  @ApiProperty({ type: [AcceptStockReceiptItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AcceptStockReceiptItemDto)
+  items: AcceptStockReceiptItemDto[];
 }

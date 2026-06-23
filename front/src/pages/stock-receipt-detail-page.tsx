@@ -39,11 +39,11 @@ import {
   RECEIPT_STATUS_LABELS,
 } from '@/lib/stock-receipt'
 import {
-  useAcceptStockReceiptMutation,
   useAddStockReceiptItemMutation,
   useCancelStockReceiptMutation,
   useGetStockReceiptQuery,
   useRemoveStockReceiptItemMutation,
+  useSubmitStockReceiptMutation,
 } from '@/store/api/stock-receipts.api'
 
 const LIST_PATH = '/omborlar/maxsulot-kirim'
@@ -60,31 +60,40 @@ function statusVariant(status: 'in_progress' | 'completed' | 'cancelled') {
   return 'destructive'
 }
 
-function statusDescription(status: 'in_progress' | 'completed' | 'cancelled') {
+function statusDescription(
+  status: 'in_progress' | 'completed' | 'cancelled',
+  submittedAt?: string,
+) {
   if (status === 'completed') {
-    return 'Kirim qabul qilingan. Maxsulotlar omborga yozilgan.'
+    return 'Kirim qabul qilindi. Maxsulotlar omborga yozilgan.'
   }
   if (status === 'cancelled') {
     return 'Kirim bekor qilingan. Ma\'lumotlar saqlangan, lekin omborga yozilmagan.'
   }
-  return 'Maxsulotlarni qo\'shing va tayyor bo\'lgach qabul qiling yoki bekor qiling.'
+  if (submittedAt) {
+    return 'Kirim yuborilgan va Jarayonda. Qabul qilish bo\'limidan tasdiqlang.'
+  }
+  return 'Maxsulotlarni qo\'shing va tayyor bo\'lgach yuboring.'
 }
 
 export function StockReceiptDetailPage() {
   const { id = '' } = useParams()
   const [productDialogOpen, setProductDialogOpen] = useState(false)
-  const [acceptDialogOpen, setAcceptDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
   const [removingItemId, setRemovingItemId] = useState<string | null>(null)
 
   const receiptQuery = useGetStockReceiptQuery(id, { skip: !id })
   const [addItem, addItemState] = useAddStockReceiptItemMutation()
   const [removeItem] = useRemoveStockReceiptItemMutation()
-  const [acceptReceipt, acceptState] = useAcceptStockReceiptMutation()
   const [cancelReceipt, cancelState] = useCancelStockReceiptMutation()
+  const [submitReceipt, submitState] = useSubmitStockReceiptMutation()
 
   const receipt = receiptQuery.data
-  const isEditable = receipt?.status === 'in_progress'
+  const isInProgress = receipt?.status === 'in_progress'
+  const isEditable = isInProgress && !receipt?.submittedAt
+  const canCancel = isInProgress
+  const canSubmit = isEditable
 
   usePageMeta({
     title: pageTitle(receipt?.name ?? 'Kirim', 'Omborlar'),
@@ -139,14 +148,14 @@ export function StockReceiptDetailPage() {
     }
   }
 
-  async function handleAccept() {
+  async function handleSubmit() {
     try {
-      await acceptReceipt(id).unwrap()
-      notify.success('Kirim qabul qilindi')
-      setAcceptDialogOpen(false)
+      await submitReceipt(id).unwrap()
+      notify.success('Kirim yuborildi')
+      setSubmitDialogOpen(false)
     } catch (err) {
       notify.error(
-        getApiErrorMessage(err, 'Kirimni qabul qilish amalga oshmadi'),
+        getApiErrorMessage(err, 'Kirimni yuborish amalga oshmadi'),
       )
     }
   }
@@ -188,32 +197,38 @@ export function StockReceiptDetailPage() {
             </Badge>
           </div>
           <p className="text-muted-foreground text-sm">
-            {statusDescription(receipt.status)}
+            {statusDescription(receipt.status, receipt.submittedAt)}
           </p>
         </div>
 
-        {isEditable && (
+        {(canSubmit || canCancel) && (
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setProductDialogOpen(true)}>
-              <AppIcon name="plus" />
-              Maxsulot qo&apos;shish
-            </Button>
-            <Button
-              variant="outline"
-              disabled={cancelState.isLoading}
-              onClick={() => setCancelDialogOpen(true)}
-            >
-              <AppIcon name="x" />
-              Bekor qilish
-            </Button>
-            <Button
-              variant="default"
-              disabled={receipt.items.length === 0 || acceptState.isLoading}
-              onClick={() => setAcceptDialogOpen(true)}
-            >
-              <AppIcon name="check" />
-              Qabul qilish
-            </Button>
+            {canSubmit && (
+              <Button onClick={() => setProductDialogOpen(true)}>
+                <AppIcon name="plus" />
+                Maxsulot qo&apos;shish
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                variant="outline"
+                disabled={cancelState.isLoading}
+                onClick={() => setCancelDialogOpen(true)}
+              >
+                <AppIcon name="x" />
+                Bekor qilish
+              </Button>
+            )}
+            {canSubmit && (
+              <Button
+                variant="default"
+                disabled={receipt.items.length === 0 || submitState.isLoading}
+                onClick={() => setSubmitDialogOpen(true)}
+              >
+                <AppIcon name="chevron-right" />
+                Yuborish
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -278,6 +293,9 @@ export function StockReceiptDetailPage() {
                 <TableHead className="w-12 text-center">№</TableHead>
                 <TableHead>Maxsulot</TableHead>
                 <TableHead className="text-right">Miqdor</TableHead>
+                {receipt.status === 'completed' && (
+                  <TableHead className="text-right">Qabul miqdori</TableHead>
+                )}
                 <TableHead className="text-right">Narx</TableHead>
                 <TableHead className="text-right">Summa</TableHead>
                 {isEditable && (
@@ -289,7 +307,13 @@ export function StockReceiptDetailPage() {
               {receipt.items.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={isEditable ? 6 : 5}
+                    colSpan={
+                      isEditable
+                        ? 6
+                        : receipt.status === 'completed'
+                          ? 6
+                          : 5
+                    }
                     className="text-muted-foreground h-24 text-center"
                   >
                     Maxsulotlar qo&apos;shilmagan
@@ -307,6 +331,11 @@ export function StockReceiptDetailPage() {
                     <TableCell className="text-right tabular-nums">
                       {formatAmount(item.quantity)}
                     </TableCell>
+                    {receipt.status === 'completed' && (
+                      <TableCell className="text-right tabular-nums">
+                        {formatAmount(item.receivedQuantity ?? 0)}
+                      </TableCell>
+                    )}
                     <TableCell className="text-right tabular-nums">
                       {formatAmount(item.unitPrice)}
                     </TableCell>
@@ -369,26 +398,27 @@ export function StockReceiptDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={acceptDialogOpen} onOpenChange={setAcceptDialogOpen}>
+      <AlertDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Kirimni qabul qilasizmi?</AlertDialogTitle>
+            <AlertDialogTitle>Kirimni yuborasizmi?</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="text-foreground font-medium">{receipt.name}</span>{' '}
-              qabul qilingandan keyin maxsulotlar omborga yoziladi va kirim
-              yopiladi. Bu amalni qaytarib bo&apos;lmaydi.
+              yuborilgandan keyin holat &quot;Jarayonda&quot; bo&apos;lib qoladi.
+              Qabul qilish faqat &quot;Kirimni qabul qilish&quot; bo&apos;limida
+              amalga oshiriladi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={acceptState.isLoading}>
+            <AlertDialogCancel disabled={submitState.isLoading}>
               Bekor qilish
             </AlertDialogCancel>
             <Button
               type="button"
-              disabled={acceptState.isLoading}
-              onClick={() => void handleAccept()}
+              disabled={submitState.isLoading}
+              onClick={() => void handleSubmit()}
             >
-              {acceptState.isLoading ? 'Qabul qilinmoqda...' : 'Ha, qabul qilish'}
+              {submitState.isLoading ? 'Yuborilmoqda...' : 'Ha, yuborish'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

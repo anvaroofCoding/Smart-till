@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { ProductBrandQueryDto } from './dto/product-brand-query.dto';
 import {
   CreateProductBrandDto,
   ProductBrandResponseDto,
@@ -31,8 +31,8 @@ export class ProductBrandsController {
 
   @Get()
   @ApiOperation({ summary: 'Maxsulot brendlari ro\'yxati' })
-  findAll(@Query() pagination: PaginationDto) {
-    return this.productBrandsService.findAll(pagination);
+  findAll(@Query() query: ProductBrandQueryDto) {
+    return this.productBrandsService.findAll(query);
   }
 
   @Get(':id')

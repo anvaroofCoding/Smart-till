@@ -19,6 +19,8 @@ import { SupplierDetailPage } from '@/pages/supplier-detail-page'
 import { SupplierEditPage } from '@/pages/supplier-edit-page'
 import { WarehousesPage } from '@/pages/warehouses-page'
 import { StockReceiptsPage } from '@/pages/stock-receipts-page'
+import { StockReceiptAcceptListPage } from '@/pages/stock-receipt-accept-list-page'
+import { StockReceiptAcceptPage } from '@/pages/stock-receipt-accept-page'
 import { StockReceiptCreatePage } from '@/pages/stock-receipt-create-page'
 import { StockReceiptDetailPage } from '@/pages/stock-receipt-detail-page'
 import { PlaceholderPage } from '@/pages/placeholder-page'
@@ -40,6 +42,8 @@ const WAREHOUSES_PATH = 'omborlar/ro-yxat'
 const STOCK_RECEIPTS_PATH = 'omborlar/maxsulot-kirim'
 const STOCK_RECEIPT_CREATE_PATH = 'omborlar/maxsulot-kirim/yaratish'
 const STOCK_RECEIPT_DETAIL_PATH = 'omborlar/maxsulot-kirim/:id'
+const STOCK_RECEIPT_ACCEPT_LIST_PATH = 'omborlar/kirim-qabul'
+const STOCK_RECEIPT_ACCEPT_PATH = 'omborlar/kirim-qabul/:id'
 const USER_CREATE_PATH = 'sozlamalar/foydalanuvchilar/yaratish'
 const USER_EDIT_PATH = 'sozlamalar/foydalanuvchilar/:id/tahrirlash'
 
@@ -84,6 +88,8 @@ const router = createBrowserRouter([
                 <WarehousesPage />
               ) : route.path === STOCK_RECEIPTS_PATH ? (
                 <StockReceiptsPage />
+              ) : route.path === STOCK_RECEIPT_ACCEPT_LIST_PATH ? (
+                <StockReceiptAcceptListPage />
               ) : (
                 <PlaceholderPage title={route.title} section={route.section} />
               ),
@@ -123,6 +129,10 @@ const router = createBrowserRouter([
           {
             path: STOCK_RECEIPT_DETAIL_PATH,
             element: <StockReceiptDetailPage />,
+          },
+          {
+            path: STOCK_RECEIPT_ACCEPT_PATH,
+            element: <StockReceiptAcceptPage />,
           },
         ],
       },

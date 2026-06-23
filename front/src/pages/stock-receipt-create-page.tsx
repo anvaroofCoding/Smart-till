@@ -84,8 +84,8 @@ export function StockReceiptCreatePage() {
               Yangi kirim
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Asosiy ma&apos;lumotlarni kiriting. Yaratilgandan keyin holat
-              avtomatik &quot;Jarayonda&quot; bo&apos;ladi.
+              Asosiy ma&apos;lumotlarni kiriting. Yaratilgandan keyin maxsulotlar
+              qo&apos;shiladi va yuborilguncha holat &quot;Jarayonda&quot; bo&apos;ladi.
             </p>
           </div>
         </div>
