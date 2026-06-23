@@ -4,8 +4,10 @@ export const API_TAGS = {
   ProductCategory: 'ProductCategory',
   ProductBrand: 'ProductBrand',
   Product: 'Product',
+  Supplier: 'Supplier',
   Inventory: 'Inventory',
   Warehouse: 'Warehouse',
+  StockReceipt: 'StockReceipt',
   Order: 'Order',
   Health: 'Health',
 } as const

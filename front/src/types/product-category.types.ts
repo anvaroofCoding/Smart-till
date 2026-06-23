@@ -5,6 +5,7 @@ export interface ProductCategoryRecord {
   name: string
   description: string
   isActive: boolean
+  productsCount: number
   createdAt: string
   updatedAt: string
 }

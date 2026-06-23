@@ -5,6 +5,7 @@ export default () => ({
     port: parseInt(process.env.PORT ?? '3000', 10),
     apiPrefix: process.env.API_PREFIX ?? 'api',
     corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(','),
+    bodyLimit: process.env.BODY_LIMIT ?? '5mb',
   },
   database: {
     uri: process.env.MONGODB_URI ?? 'mongodb://localhost:27017/warehouse',
@@ -18,7 +19,7 @@ export default () => ({
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',
-    expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
+    expiresIn: process.env.JWT_EXPIRES_IN ?? '3650d',
   },
   session: {
     secret: process.env.SESSION_SECRET ?? 'change-me-session-secret',

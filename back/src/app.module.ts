@@ -12,6 +12,9 @@ import { UsersModule } from './users/users.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { ProductBrandsModule } from './product-brands/product-brands.module';
 import { ProductsModule } from './products/products.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
+import { StockReceiptsModule } from './stock-receipts/stock-receipts.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -29,6 +32,9 @@ import { RolesGuard } from './common/guards/roles.guard';
     ProductCategoriesModule,
     ProductBrandsModule,
     ProductsModule,
+    SuppliersModule,
+    WarehousesModule,
+    StockReceiptsModule,
     HealthModule,
     WebsocketModule,
   ],

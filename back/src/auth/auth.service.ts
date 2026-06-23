@@ -54,7 +54,8 @@ export class AuthService {
     };
   }
 
-  private buildAuthResponse(user: UserDocument) {
+  private async buildAuthResponse(user: UserDocument) {
+    const profile = await this.usersService.toResponse(user);
     const payload: JwtPayload = {
       sub: user._id.toString(),
       email: user.email,
@@ -62,28 +63,28 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
-    const birthDate = user.birthDate
-      ? new Date(user.birthDate).toISOString().slice(0, 10)
-      : undefined;
 
     return {
       tokens: {
         accessToken,
         tokenType: 'Bearer',
-        expiresIn: this.config.get<string>('jwt.expiresIn') ?? '7d',
+        expiresIn: this.config.get<string>('jwt.expiresIn') ?? '3650d',
       },
       user: {
-        id: user._id.toString(),
-        email: user.email,
-        login: user.login,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        fullName: `${user.firstName} ${user.lastName}`.trim(),
+        id: profile.id,
+        email: profile.email,
+        login: profile.login,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
         role: user.role,
-        position: user.position,
-        phone: user.phone ?? '',
-        birthDate,
-        allowedPages: user.allowedPages ?? [],
+        position: profile.position,
+        phone: profile.phone ?? '',
+        birthDate: profile.birthDate,
+        allowedPages: profile.allowedPages ?? [],
+        allWarehouses: profile.allWarehouses,
+        warehouseIds: profile.warehouseIds,
+        warehouses: profile.warehouses,
       },
     };
   }
@@ -95,23 +96,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const birthDate = user.birthDate
-      ? new Date(user.birthDate).toISOString().slice(0, 10)
-      : undefined;
+    const profile = await this.usersService.toResponse(user);
 
     return {
       user: {
-        id: user._id.toString(),
-        email: user.email,
-        login: user.login,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        fullName: `${user.firstName} ${user.lastName}`.trim(),
+        id: profile.id,
+        email: profile.email,
+        login: profile.login,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
         role: user.role,
-        position: user.position,
-        phone: user.phone ?? '',
-        birthDate,
-        allowedPages: user.allowedPages ?? [],
+        position: profile.position,
+        phone: profile.phone ?? '',
+        birthDate: profile.birthDate,
+        allowedPages: profile.allowedPages ?? [],
+        allWarehouses: profile.allWarehouses,
+        warehouseIds: profile.warehouseIds,
+        warehouses: profile.warehouses,
       },
     };
   }

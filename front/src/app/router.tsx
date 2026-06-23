@@ -13,6 +13,14 @@ import { ProductBrandsPage } from '@/pages/product-brands-page'
 import { ProductsPage } from '@/pages/products-page'
 import { ProductCreatePage } from '@/pages/product-create-page'
 import { ProductEditPage } from '@/pages/product-edit-page'
+import { SuppliersPage } from '@/pages/suppliers-page'
+import { SupplierCreatePage } from '@/pages/supplier-create-page'
+import { SupplierDetailPage } from '@/pages/supplier-detail-page'
+import { SupplierEditPage } from '@/pages/supplier-edit-page'
+import { WarehousesPage } from '@/pages/warehouses-page'
+import { StockReceiptsPage } from '@/pages/stock-receipts-page'
+import { StockReceiptCreatePage } from '@/pages/stock-receipt-create-page'
+import { StockReceiptDetailPage } from '@/pages/stock-receipt-detail-page'
 import { PlaceholderPage } from '@/pages/placeholder-page'
 
 const menuRoutes = flattenSidebarRoutes()
@@ -24,6 +32,14 @@ const PRODUCT_BRANDS_PATH = 'maxsulotlar/brend'
 const PRODUCTS_PATH = 'maxsulotlar/ro-yxat'
 const PRODUCT_CREATE_PATH = 'maxsulotlar/ro-yxat/yaratish'
 const PRODUCT_EDIT_PATH = 'maxsulotlar/ro-yxat/:id/tahrirlash'
+const SUPPLIERS_PATH = 'yetkazib-beruvchilar/ro-yxat'
+const SUPPLIER_CREATE_PATH = 'yetkazib-beruvchilar/ro-yxat/yaratish'
+const SUPPLIER_DETAIL_PATH = 'yetkazib-beruvchilar/ro-yxat/:id'
+const SUPPLIER_EDIT_PATH = 'yetkazib-beruvchilar/ro-yxat/:id/tahrirlash'
+const WAREHOUSES_PATH = 'omborlar/ro-yxat'
+const STOCK_RECEIPTS_PATH = 'omborlar/maxsulot-kirim'
+const STOCK_RECEIPT_CREATE_PATH = 'omborlar/maxsulot-kirim/yaratish'
+const STOCK_RECEIPT_DETAIL_PATH = 'omborlar/maxsulot-kirim/:id'
 const USER_CREATE_PATH = 'sozlamalar/foydalanuvchilar/yaratish'
 const USER_EDIT_PATH = 'sozlamalar/foydalanuvchilar/:id/tahrirlash'
 
@@ -62,6 +78,12 @@ const router = createBrowserRouter([
                 <ProductBrandsPage />
               ) : route.path === PRODUCTS_PATH ? (
                 <ProductsPage />
+              ) : route.path === SUPPLIERS_PATH ? (
+                <SuppliersPage />
+              ) : route.path === WAREHOUSES_PATH ? (
+                <WarehousesPage />
+              ) : route.path === STOCK_RECEIPTS_PATH ? (
+                <StockReceiptsPage />
               ) : (
                 <PlaceholderPage title={route.title} section={route.section} />
               ),
@@ -81,6 +103,26 @@ const router = createBrowserRouter([
           {
             path: PRODUCT_EDIT_PATH,
             element: <ProductEditPage />,
+          },
+          {
+            path: SUPPLIER_CREATE_PATH,
+            element: <SupplierCreatePage />,
+          },
+          {
+            path: SUPPLIER_DETAIL_PATH,
+            element: <SupplierDetailPage />,
+          },
+          {
+            path: SUPPLIER_EDIT_PATH,
+            element: <SupplierEditPage />,
+          },
+          {
+            path: STOCK_RECEIPT_CREATE_PATH,
+            element: <StockReceiptCreatePage />,
+          },
+          {
+            path: STOCK_RECEIPT_DETAIL_PATH,
+            element: <StockReceiptDetailPage />,
           },
         ],
       },

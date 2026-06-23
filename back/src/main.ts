@@ -27,9 +27,13 @@ async function bootstrap() {
     'http://localhost:5173',
   ];
   const redisEnabled = config.get<boolean>('redis.enabled');
+  const bodyLimit = config.get<string>('app.bodyLimit') ?? '5mb';
 
   app.set('trust proxy', 1);
   app.setGlobalPrefix(apiPrefix);
+
+  app.useBodyParser('json', { limit: bodyLimit });
+  app.useBodyParser('urlencoded', { limit: bodyLimit, extended: true });
 
   app.use(helmet());
   app.use(compression());

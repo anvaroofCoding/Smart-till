@@ -104,6 +104,21 @@ export const productBrandsApi = baseApi.injectEndpoints({
         { type: API_TAGS.ProductBrand, id: 'LIST' },
       ],
     }),
+
+    deleteProductBrand: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/product-brands/${id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: ApiResponse<{ message: string }> | { message: string }) =>
+        'data' in response && response.data
+          ? response.data
+          : (response as { message: string }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: API_TAGS.ProductBrand, id },
+        { type: API_TAGS.ProductBrand, id: 'LIST' },
+      ],
+    }),
   }),
 })
 
@@ -113,4 +128,5 @@ export const {
   useCreateProductBrandMutation,
   useUpdateProductBrandMutation,
   useSetProductBrandStatusMutation,
+  useDeleteProductBrandMutation,
 } = productBrandsApi

@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { UserRole } from '../../common/constants/roles';
 import { UserPosition } from '../../common/constants/positions';
+import { Warehouse } from '../../warehouses/schemas/warehouse.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -36,6 +37,12 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   allowedPages: string[];
+
+  @Prop({ default: false })
+  allWarehouses: boolean;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: Warehouse.name }], default: [] })
+  warehouseIds: Types.ObjectId[];
 
   @Prop({ required: true, enum: UserRole, default: UserRole.SCANNER })
   role: UserRole;

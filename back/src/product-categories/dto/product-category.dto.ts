@@ -46,6 +46,9 @@ export class ProductCategoryResponseDto {
   @ApiProperty()
   isActive: boolean;
 
+  @ApiProperty({ description: 'Ushbu kategoriyadan foydalanilgan maxsulotlar soni' })
+  productsCount: number;
+
   @ApiProperty()
   createdAt: Date;
 

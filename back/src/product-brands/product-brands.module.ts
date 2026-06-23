@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Product, ProductSchema } from '../products/schemas/product.schema';
 import {
   ProductBrand,
   ProductBrandSchema,
@@ -11,6 +12,7 @@ import { ProductBrandsService } from './product-brands.service';
   imports: [
     MongooseModule.forFeature([
       { name: ProductBrand.name, schema: ProductBrandSchema },
+      { name: Product.name, schema: ProductSchema },
     ]),
   ],
   controllers: [ProductBrandsController],

@@ -104,6 +104,21 @@ export const productCategoriesApi = baseApi.injectEndpoints({
         { type: API_TAGS.ProductCategory, id: 'LIST' },
       ],
     }),
+
+    deleteProductCategory: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/product-categories/${id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: ApiResponse<{ message: string }> | { message: string }) =>
+        'data' in response && response.data
+          ? response.data
+          : (response as { message: string }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: API_TAGS.ProductCategory, id },
+        { type: API_TAGS.ProductCategory, id: 'LIST' },
+      ],
+    }),
   }),
 })
 
@@ -113,4 +128,5 @@ export const {
   useCreateProductCategoryMutation,
   useUpdateProductCategoryMutation,
   useSetProductCategoryStatusMutation,
+  useDeleteProductCategoryMutation,
 } = productCategoriesApi

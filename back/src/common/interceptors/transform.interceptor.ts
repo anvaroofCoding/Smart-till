@@ -26,7 +26,7 @@ export class TransformInterceptor<T>
           data &&
           typeof data === 'object' &&
           'data' in data &&
-          ('meta' in data || 'message' in data)
+          ('meta' in data || 'message' in data || 'summary' in data)
         ) {
           return data as unknown as ApiResponse<T>;
         }

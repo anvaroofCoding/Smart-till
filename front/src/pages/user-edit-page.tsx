@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
@@ -11,6 +11,7 @@ import {
 } from '@/components/users/user-form'
 import { Button } from '@/components/ui/button'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { pageTitle } from '@/config/seo'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useQueryLoading } from '@/hooks/use-query-loading'
@@ -35,6 +36,11 @@ export function UserEditPage() {
     ),
   })
 
+  useEffect(() => {
+    if (!loadError) return
+    notify.error(getApiErrorMessage(loadError, 'Foydalanuvchi topilmadi'))
+  }, [loadError])
+
   async function handleSubmit(form: ReturnType<typeof userToFormValues>) {
     if (!id) return
     setError(null)
@@ -47,9 +53,10 @@ export function UserEditPage() {
 
     try {
       await updateUser({ id, body: buildUserPayload(form, 'edit') }).unwrap()
+      notify.success('Foydalanuvchi saqlandi')
       navigate(USERS_LIST_PATH)
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Saqlash amalga oshmadi'))
+      notify.error(getApiErrorMessage(err, 'Saqlash amalga oshmadi'))
     }
   }
 

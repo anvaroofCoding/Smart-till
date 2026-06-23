@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
@@ -32,6 +32,7 @@ import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
   useGetProductsQuery,
@@ -89,7 +90,6 @@ function ProductActiveSwitch({
 
 export function ProductsPage() {
   const [search, setSearch] = useState('')
-  const [actionError, setActionError] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const { page, perPage, setPage, setPerPage } = useListPagination(search)
 
@@ -116,13 +116,19 @@ export function ProductsPage() {
     totalPages: 1,
   }
 
+  useEffect(() => {
+    if (!productsQuery.error) return
+    notify.error(
+      getApiErrorMessage(productsQuery.error, "Ro'yxatni yuklab bo'lmadi"),
+    )
+  }, [productsQuery.error])
+
   async function handleToggleActive(product: ProductRecord, isActive: boolean) {
-    setActionError(null)
     setTogglingId(product.id)
     try {
       await setProductStatus({ id: product.id, isActive }).unwrap()
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(err, 'Holatni o\'zgartirish amalga oshmadi'),
       )
     } finally {
@@ -168,18 +174,6 @@ export function ProductsPage() {
               className="pl-9"
             />
           </div>
-
-          {productsQuery.error && (
-            <p className="text-destructive text-sm">
-              {getApiErrorMessage(
-                productsQuery.error,
-                "Ro'yxatni yuklab bo'lmadi",
-              )}
-            </p>
-          )}
-          {actionError && (
-            <p className="text-destructive text-sm">{actionError}</p>
-          )}
 
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (

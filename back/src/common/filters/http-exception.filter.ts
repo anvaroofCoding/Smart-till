@@ -20,7 +20,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        : this.isPayloadTooLarge(exception)
+          ? HttpStatus.PAYLOAD_TOO_LARGE
+          : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : null;
@@ -28,7 +30,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let errors: Record<string, string[]> | undefined;
 
-    if (typeof exceptionResponse === 'string') {
+    if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
+      message = 'So\'rov hajmi juda katta (rasm 2 MB dan oshmasligi kerak)';
+    } else if (typeof exceptionResponse === 'string') {
       message = exceptionResponse;
     } else if (
       exceptionResponse &&
@@ -61,5 +65,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
     });
+  }
+
+  private isPayloadTooLarge(exception: unknown): boolean {
+    if (!exception || typeof exception !== 'object') {
+      return false;
+    }
+
+    const err = exception as { type?: string; status?: number; statusCode?: number };
+    return (
+      err.type === 'entity.too.large' ||
+      err.status === 413 ||
+      err.statusCode === 413
+    );
   }
 }

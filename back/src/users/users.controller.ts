@@ -23,7 +23,6 @@ import {
   UsersStatsDto,
 } from './dto/user.dto';
 import { UsersService } from './users.service';
-import { toUserResponse } from './users.mapper';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -48,14 +47,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Foydalanuvchi ma\'lumotlari' })
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     const user = await this.usersService.findByIdAdmin(id);
-    return toUserResponse(user);
+    return this.usersService.toResponse(user);
   }
 
   @Post()
   @ApiOperation({ summary: 'Yangi foydalanuvchi yaratish' })
   async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     const user = await this.usersService.createFromDto(dto);
-    return toUserResponse(user);
+    return this.usersService.toResponse(user);
   }
 
   @Patch(':id')
@@ -65,7 +64,7 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     const user = await this.usersService.update(id, dto);
-    return toUserResponse(user);
+    return this.usersService.toResponse(user);
   }
 
   @Patch(':id/status')
@@ -75,7 +74,7 @@ export class UsersController {
     @Body() body: { isActive: boolean },
   ): Promise<UserResponseDto> {
     const user = await this.usersService.setActive(id, body.isActive);
-    return toUserResponse(user);
+    return this.usersService.toResponse(user);
   }
 
   @Delete(':id')

@@ -11,6 +11,7 @@ import {
 } from '@/components/users/user-form'
 import { Button } from '@/components/ui/button'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { pageTitle } from '@/config/seo'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import type { CreateUserRequest } from '@/types/user.types'
@@ -38,9 +39,10 @@ export function UserCreatePage() {
 
     try {
       await createUser(buildUserPayload(form) as CreateUserRequest).unwrap()
+      notify.success('Foydalanuvchi yaratildi')
       navigate(USERS_LIST_PATH)
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Foydalanuvchi yaratish amalga oshmadi'))
+      notify.error(getApiErrorMessage(err, 'Foydalanuvchi yaratish amalga oshmadi'))
     }
   }
 

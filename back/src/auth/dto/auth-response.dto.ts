@@ -46,6 +46,15 @@ export class AuthUserDto {
 
   @ApiProperty({ type: [String] })
   allowedPages: string[];
+
+  @ApiProperty()
+  allWarehouses: boolean;
+
+  @ApiProperty({ type: [String] })
+  warehouseIds: string[];
+
+  @ApiProperty({ type: [Object] })
+  warehouses: Array<{ id: string; name: string }>;
 }
 
 export class LoginResponseDto {

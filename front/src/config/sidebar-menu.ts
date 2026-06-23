@@ -61,6 +61,7 @@ const sidebarMenuSource: SidebarMenuItem[] = [
     items: [
       { title: 'Maxsulotlar soni', url: '/omborlar/maxsulotlar-soni' },
       { title: "Omborlar ro'yxati", url: '/omborlar/ro-yxat' },
+      { title: 'Maxsulot kirim qilish', url: '/omborlar/maxsulot-kirim' },
     ],
   },
   {

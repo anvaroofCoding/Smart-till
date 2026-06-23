@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
@@ -11,6 +11,7 @@ import {
 import { FormPageSkeleton } from '@/components/loading'
 import { Button } from '@/components/ui/button'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { pageTitle } from '@/config/seo'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useQueriesLoading, useQueryLoading } from '@/hooks/use-query-loading'
@@ -43,6 +44,11 @@ export function ProductEditPage() {
     title: pageTitle(product?.name ?? 'Tahrirlash', 'Maxsulotlar'),
   })
 
+  useEffect(() => {
+    if (!loadError) return
+    notify.error(getApiErrorMessage(loadError, 'Maxsulot topilmadi'))
+  }, [loadError])
+
   async function handleSubmit(form: ReturnType<typeof productToFormValues>) {
     if (!id) return
     setError(null)
@@ -58,9 +64,10 @@ export function ProductEditPage() {
         id,
         body: buildProductPayload(form),
       }).unwrap()
+      notify.success('Maxsulot saqlandi')
       navigate(PRODUCTS_LIST_PATH)
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Saqlash amalga oshmadi'))
+      notify.error(getApiErrorMessage(err, 'Saqlash amalga oshmadi'))
     }
   }
 

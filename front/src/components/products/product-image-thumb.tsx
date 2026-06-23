@@ -1,4 +1,13 @@
+import { useState } from 'react'
+
 import { AppIcon } from '@/components/icons/app-icon'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
 interface ProductImageThumbProps {
@@ -6,6 +15,7 @@ interface ProductImageThumbProps {
   name: string
   size?: 'sm' | 'lg'
   className?: string
+  previewable?: boolean
 }
 
 const sizeClasses = {
@@ -23,7 +33,10 @@ export function ProductImageThumb({
   name,
   size = 'sm',
   className,
+  previewable = true,
 }: ProductImageThumbProps) {
+  const [previewOpen, setPreviewOpen] = useState(false)
+
   if (!image) {
     return (
       <div
@@ -42,15 +55,64 @@ export function ProductImageThumb({
     )
   }
 
-  return (
+  const imageElement = (
     <img
       src={image}
       alt={name}
       className={cn(
-        'shrink-0 rounded-md border object-cover',
-        sizeClasses[size],
-        className,
+        'size-full rounded-md object-cover',
+        previewable && 'transition-opacity hover:opacity-90',
       )}
     />
+  )
+
+  if (!previewable) {
+    return (
+      <div
+        className={cn(
+          'shrink-0 overflow-hidden rounded-md border',
+          sizeClasses[size],
+          className,
+        )}
+      >
+        {imageElement}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        className={cn(
+          'shrink-0 cursor-zoom-in overflow-hidden rounded-md border',
+          sizeClasses[size],
+          className,
+        )}
+        aria-label={`${name} rasmini kattaroq ko'rish`}
+      >
+        {imageElement}
+      </button>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent
+          className="max-w-4xl gap-4 p-4 sm:p-6"
+          showCloseButton={false}
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>{name}</DialogTitle>
+            <DialogDescription>Maxsulot rasmi</DialogDescription>
+          </DialogHeader>
+          <div className="flex max-h-[80vh] items-center justify-center overflow-hidden rounded-lg bg-muted/40">
+            <img
+              src={image}
+              alt={name}
+              className="max-h-[80vh] w-full object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

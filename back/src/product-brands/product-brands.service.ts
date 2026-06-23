@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { getProductCountsByField } from '../common/utils/product-usage-counts';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 import {
   CreateProductBrandDto,
   UpdateProductBrandDto,
@@ -21,6 +23,8 @@ export class ProductBrandsService {
   constructor(
     @InjectModel(ProductBrand.name)
     private readonly brandModel: Model<ProductBrandDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
   ) {}
 
   async create(dto: CreateProductBrandDto): Promise<ProductBrandDocument> {
@@ -65,8 +69,16 @@ export class ProductBrandsService {
       this.brandModel.countDocuments(filter),
     ]);
 
+    const usageCounts = await getProductCountsByField(
+      this.productModel,
+      'brandId',
+      items.map((item) => item._id),
+    );
+
     return {
-      data: items.map(toProductBrandResponse),
+      data: items.map((item) =>
+        toProductBrandResponse(item, usageCounts.get(item._id.toString()) ?? 0),
+      ),
       meta: {
         total,
         page,
@@ -82,6 +94,22 @@ export class ProductBrandsService {
       throw new NotFoundException('Brend topilmadi');
     }
     return brand;
+  }
+
+  async getProductsCount(id: string): Promise<number> {
+    if (!Types.ObjectId.isValid(id)) {
+      return 0;
+    }
+
+    return this.productModel
+      .countDocuments({ brandId: new Types.ObjectId(id) })
+      .exec();
+  }
+
+  async findByIdWithUsage(id: string) {
+    const brand = await this.findById(id);
+    const productsCount = await this.getProductsCount(id);
+    return toProductBrandResponse(brand, productsCount);
   }
 
   async update(
@@ -127,6 +155,19 @@ export class ProductBrandsService {
     brand.isActive = isActive;
     await brand.save();
     return brand;
+  }
+
+  async remove(id: string): Promise<void> {
+    const brand = await this.findById(id);
+    const productsCount = await this.getProductsCount(brand._id.toString());
+
+    if (productsCount > 0) {
+      throw new ConflictException(
+        'Brend maxsulotlarda ishlatilgan, o\'chirib bo\'lmaydi',
+      );
+    }
+
+    await this.brandModel.findByIdAndDelete(id).exec();
   }
 }
 

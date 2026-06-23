@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   CategoryFormDialog,
   type CategoryFormValues,
 } from '@/components/product-categories/category-form-dialog'
 import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
+import { CatalogDeleteButton } from '@/components/shared/catalog-delete-button'
 import { AppIcon } from '@/components/icons/app-icon'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import {
@@ -34,9 +35,11 @@ import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
   useCreateProductCategoryMutation,
+  useDeleteProductCategoryMutation,
   useGetProductCategoriesQuery,
   useSetProductCategoryStatusMutation,
   useUpdateProductCategoryMutation,
@@ -86,8 +89,8 @@ export function ProductCategoriesPage() {
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [editingCategory, setEditingCategory] =
     useState<ProductCategoryRecord | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { page, perPage, setPage, setPerPage } = useListPagination(search)
 
   const categoriesQuery = useGetProductCategoriesQuery({
@@ -99,6 +102,7 @@ export function ProductCategoriesPage() {
   const [createCategory, createState] = useCreateProductCategoryMutation()
   const [updateCategory, updateState] = useUpdateProductCategoryMutation()
   const [setCategoryStatus] = useSetProductCategoryStatusMutation()
+  const [deleteCategory] = useDeleteProductCategoryMutation()
 
   const { showSkeleton: showTableSkeleton, showRefreshing: showTableRefreshing } =
     useQueryLoading(categoriesQuery)
@@ -116,23 +120,26 @@ export function ProductCategoriesPage() {
   }
   const isSaving = createState.isLoading || updateState.isLoading
 
+  useEffect(() => {
+    if (!categoriesQuery.error) return
+    notify.error(
+      getApiErrorMessage(categoriesQuery.error, "Ro'yxatni yuklab bo'lmadi"),
+    )
+  }, [categoriesQuery.error])
+
   function openCreateDialog() {
     setDialogMode('create')
     setEditingCategory(null)
-    setActionError(null)
     setDialogOpen(true)
   }
 
   function openEditDialog(category: ProductCategoryRecord) {
     setDialogMode('edit')
     setEditingCategory(category)
-    setActionError(null)
     setDialogOpen(true)
   }
 
   async function handleFormSubmit(values: CategoryFormValues) {
-    setActionError(null)
-
     const payload = {
       name: values.name.trim(),
       description: values.description.trim() || undefined,
@@ -142,15 +149,17 @@ export function ProductCategoriesPage() {
     try {
       if (dialogMode === 'create') {
         await createCategory(payload).unwrap()
+        notify.success('Kategoriya qo\'shildi')
       } else if (editingCategory) {
         await updateCategory({
           id: editingCategory.id,
           body: payload,
         }).unwrap()
+        notify.success('Kategoriya saqlandi')
       }
       setDialogOpen(false)
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(
           err,
           dialogMode === 'create'
@@ -165,16 +174,31 @@ export function ProductCategoriesPage() {
     category: ProductCategoryRecord,
     isActive: boolean,
   ) {
-    setActionError(null)
     setTogglingId(category.id)
     try {
       await setCategoryStatus({ id: category.id, isActive }).unwrap()
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(err, 'Holatni o\'zgartirish amalga oshmadi'),
       )
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  async function handleDelete(category: ProductCategoryRecord) {
+    setDeletingId(category.id)
+    try {
+      await deleteCategory(category.id).unwrap()
+      notify.success('Kategoriya o\'chirildi')
+    } catch (err) {
+      notify.error(
+        getApiErrorMessage(err, 'Kategoriyani o\'chirib bo\'lmadi'),
+        { title: 'O\'chirib bo\'lmadi' },
+      )
+      throw err
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -215,18 +239,6 @@ export function ProductCategoriesPage() {
               className="pl-9"
             />
           </div>
-
-          {categoriesQuery.error && (
-            <p className="text-destructive text-sm">
-              {getApiErrorMessage(
-                categoriesQuery.error,
-                "Ro'yxatni yuklab bo'lmadi",
-              )}
-            </p>
-          )}
-          {actionError && !dialogOpen && (
-            <p className="text-destructive text-sm">{actionError}</p>
-          )}
 
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
@@ -299,14 +311,23 @@ export function ProductCategoriesPage() {
                             />
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(category)}
-                              aria-label="Tahrirlash"
-                            >
-                              <AppIcon name="pencil" />
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(category)}
+                                aria-label="Tahrirlash"
+                              >
+                                <AppIcon name="pencil" />
+                              </Button>
+                              <CatalogDeleteButton
+                                name={category.name}
+                                productsCount={category.productsCount ?? 0}
+                                entityType="kategoriya"
+                                isDeleting={deletingId === category.id}
+                                onConfirmDelete={() => handleDelete(category)}
+                              />
+                            </div>
                           </TableCell>
                         </TableRow>
                       )
@@ -336,7 +357,6 @@ export function ProductCategoriesPage() {
         mode={dialogMode}
         category={editingCategory}
         isSaving={isSaving}
-        error={actionError}
         onSubmit={handleFormSubmit}
       />
     </div>

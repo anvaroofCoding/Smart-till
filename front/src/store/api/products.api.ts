@@ -8,6 +8,11 @@ import type {
 import { API_TAGS } from './api-tags'
 import { baseApi } from './base-api'
 
+const catalogUsageInvalidationTags = [
+  { type: API_TAGS.ProductCategory, id: 'LIST' },
+  { type: API_TAGS.ProductBrand, id: 'LIST' },
+] as const
+
 export interface ProductsQueryParams {
   search?: string
   page?: number
@@ -59,7 +64,10 @@ export const productsApi = baseApi.injectEndpoints({
         data: body,
       }),
       transformResponse: (response: ApiResponse<ProductRecord>) => response.data,
-      invalidatesTags: [{ type: API_TAGS.Product, id: 'LIST' }],
+      invalidatesTags: [
+        { type: API_TAGS.Product, id: 'LIST' },
+        ...catalogUsageInvalidationTags,
+      ],
     }),
 
     updateProduct: builder.mutation<
@@ -75,6 +83,7 @@ export const productsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: API_TAGS.Product, id },
         { type: API_TAGS.Product, id: 'LIST' },
+        ...catalogUsageInvalidationTags,
       ],
     }),
 
@@ -91,6 +100,7 @@ export const productsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: API_TAGS.Product, id },
         { type: API_TAGS.Product, id: 'LIST' },
+        ...catalogUsageInvalidationTags,
       ],
     }),
   }),

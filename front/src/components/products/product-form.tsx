@@ -302,7 +302,8 @@ export function ProductForm({
                   )}
                   <p className="text-muted-foreground text-xs">
                     Ixtiyoriy. Faqat 1 ta rasm, maks. 2 MB. Yuklanmasa standart
-                    ikonka ishlatiladi.
+                    ikonka ishlatiladi. Rasmga bosib kattaroq ko&apos;rishingiz
+                    mumkin.
                   </p>
                 </div>
               </div>

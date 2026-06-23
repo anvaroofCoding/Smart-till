@@ -1,19 +1,28 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../common/constants/roles';
 import { UserPosition } from '../common/constants/positions';
 import { TOTAL_APP_PAGES } from '../common/constants/app-routes';
+import {
+  resolveUserWarehouseScope,
+  type UserWarehouseScope,
+} from '../common/utils/user-warehouse-scope';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { RegisterDto } from '../auth/dto/auth.dto';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { User, UserDocument } from './schemas/user.schema';
-import { toUserResponse } from './users.mapper';
+import { toUserResponse, toUserResponses } from './users.mapper';
+import {
+  Warehouse,
+  WarehouseDocument,
+} from '../warehouses/schemas/warehouse.schema';
 
 function positionToRole(position: UserPosition): UserRole {
   if (position === UserPosition.ADMIN || position === UserPosition.MENEJER) {
@@ -35,7 +44,11 @@ function buildInternalEmail(login: string, email?: string): string {
 export class UsersService {
   private readonly saltRounds = 12;
 
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Warehouse.name)
+    private readonly warehouseModel: Model<WarehouseDocument>,
+  ) {}
 
   async create(dto: RegisterDto): Promise<UserDocument> {
     const parts = dto.fullName.trim().split(/\s+/);
@@ -65,6 +78,11 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, this.saltRounds);
+    const warehouseAssignment = await this.resolveWarehouseAssignment(
+      dto.position,
+      dto.allWarehouses,
+      dto.warehouseIds,
+    );
 
     const user = await this.userModel.create({
       firstName: dto.firstName.trim(),
@@ -78,6 +96,8 @@ export class UsersService {
       position: dto.position,
       role: positionToRole(dto.position),
       allowedPages: dto.allowedPages ?? [],
+      allWarehouses: warehouseAssignment.allWarehouses,
+      warehouseIds: warehouseAssignment.warehouseIds,
       avatar: dto.avatar ?? '',
     });
 
@@ -116,7 +136,7 @@ export class UsersService {
     ]);
 
     return {
-      data: items.map(toUserResponse),
+      data: await toUserResponses(items, this.warehouseModel),
       meta: {
         total,
         page,
@@ -262,6 +282,21 @@ export class UsersService {
       user.position = dto.position;
       user.role = positionToRole(dto.position);
     }
+
+    if (
+      dto.allWarehouses !== undefined ||
+      dto.warehouseIds !== undefined ||
+      dto.position !== undefined
+    ) {
+      const assignment = await this.resolveWarehouseAssignment(
+        user.position,
+        dto.allWarehouses ?? user.allWarehouses,
+        dto.warehouseIds ?? user.warehouseIds.map((id) => id.toString()),
+      );
+      user.allWarehouses = assignment.allWarehouses;
+      user.warehouseIds = assignment.warehouseIds;
+    }
+
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
 
     await user.save();
@@ -302,6 +337,7 @@ export class UsersService {
         firstName: options.firstName,
         lastName: options.lastName,
         position: UserPosition.ADMIN,
+        allWarehouses: true,
         isActive: true,
       });
       return 'updated';
@@ -316,6 +352,7 @@ export class UsersService {
         firstName: options.firstName,
         lastName: options.lastName,
         position: UserPosition.ADMIN,
+        allWarehouses: true,
         isActive: true,
       });
       return 'migrated';
@@ -329,8 +366,48 @@ export class UsersService {
       phone: '+998 90 000 00 01',
       age: 30,
       position: UserPosition.ADMIN,
+      allWarehouses: true,
     });
 
     return 'created';
+  }
+
+  async getWarehouseScope(userId: string): Promise<UserWarehouseScope> {
+    const user = await this.findByIdOrThrow(userId);
+    return resolveUserWarehouseScope(user);
+  }
+
+  async toResponse(user: UserDocument) {
+    return toUserResponse(user, this.warehouseModel);
+  }
+
+  private async resolveWarehouseAssignment(
+    position: UserPosition,
+    allWarehouses?: boolean,
+    warehouseIds?: string[],
+  ): Promise<{ allWarehouses: boolean; warehouseIds: Types.ObjectId[] }> {
+    const grantsAll =
+      position === UserPosition.ADMIN || Boolean(allWarehouses);
+
+    if (grantsAll) {
+      return { allWarehouses: true, warehouseIds: [] };
+    }
+
+    const ids = [...new Set((warehouseIds ?? []).filter(Boolean))];
+    if (ids.length === 0) {
+      throw new BadRequestException('Kamida bitta omborni tanlang yoki barcha omborlarga ruxsat bering');
+    }
+
+    const objectIds = ids.map((id) => new Types.ObjectId(id));
+    const found = await this.warehouseModel
+      .find({ _id: { $in: objectIds } })
+      .select('_id')
+      .exec();
+
+    if (found.length !== ids.length) {
+      throw new BadRequestException('Tanlangan omborlardan biri topilmadi');
+    }
+
+    return { allWarehouses: false, warehouseIds: objectIds };
   }
 }

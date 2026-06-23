@@ -11,6 +11,7 @@ import {
 import { FormPageSkeleton } from '@/components/loading'
 import { Button } from '@/components/ui/button'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { pageTitle } from '@/config/seo'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useQueriesLoading } from '@/hooks/use-query-loading'
@@ -45,9 +46,10 @@ export function ProductCreatePage() {
 
     try {
       await createProduct(buildProductPayload(form)).unwrap()
+      notify.success('Maxsulot qo\'shildi')
       navigate(PRODUCTS_LIST_PATH)
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Maxsulot qo\'shish amalga oshmadi'))
+      notify.error(getApiErrorMessage(err, 'Maxsulot qo\'shish amalga oshmadi'))
     }
   }
 

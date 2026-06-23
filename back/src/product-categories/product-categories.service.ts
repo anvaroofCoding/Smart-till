@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { getProductCountsByField } from '../common/utils/product-usage-counts';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 import {
   CreateProductCategoryDto,
   UpdateProductCategoryDto,
@@ -21,6 +23,8 @@ export class ProductCategoriesService {
   constructor(
     @InjectModel(ProductCategory.name)
     private readonly categoryModel: Model<ProductCategoryDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
   ) {}
 
   async create(dto: CreateProductCategoryDto): Promise<ProductCategoryDocument> {
@@ -65,8 +69,19 @@ export class ProductCategoriesService {
       this.categoryModel.countDocuments(filter),
     ]);
 
+    const usageCounts = await getProductCountsByField(
+      this.productModel,
+      'categoryId',
+      items.map((item) => item._id),
+    );
+
     return {
-      data: items.map(toProductCategoryResponse),
+      data: items.map((item) =>
+        toProductCategoryResponse(
+          item,
+          usageCounts.get(item._id.toString()) ?? 0,
+        ),
+      ),
       meta: {
         total,
         page,
@@ -82,6 +97,22 @@ export class ProductCategoriesService {
       throw new NotFoundException('Kategoriya topilmadi');
     }
     return category;
+  }
+
+  async getProductsCount(id: string): Promise<number> {
+    if (!Types.ObjectId.isValid(id)) {
+      return 0;
+    }
+
+    return this.productModel
+      .countDocuments({ categoryId: new Types.ObjectId(id) })
+      .exec();
+  }
+
+  async findByIdWithUsage(id: string) {
+    const category = await this.findById(id);
+    const productsCount = await this.getProductsCount(id);
+    return toProductCategoryResponse(category, productsCount);
   }
 
   async update(
@@ -130,6 +161,19 @@ export class ProductCategoriesService {
     category.isActive = isActive;
     await category.save();
     return category;
+  }
+
+  async remove(id: string): Promise<void> {
+    const category = await this.findById(id);
+    const productsCount = await this.getProductsCount(category._id.toString());
+
+    if (productsCount > 0) {
+      throw new ConflictException(
+        'Kategoriya maxsulotlarda ishlatilgan, o\'chirib bo\'lmaydi',
+      );
+    }
+
+    await this.categoryModel.findByIdAndDelete(id).exec();
   }
 }
 

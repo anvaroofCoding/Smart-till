@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -37,8 +38,7 @@ export class ProductBrandsController {
   @Get(':id')
   @ApiOperation({ summary: 'Brend ma\'lumotlari' })
   async findOne(@Param('id') id: string): Promise<ProductBrandResponseDto> {
-    const brand = await this.productBrandsService.findById(id);
-    return toProductBrandResponse(brand);
+    return this.productBrandsService.findByIdWithUsage(id);
   }
 
   @Post()
@@ -68,5 +68,12 @@ export class ProductBrandsController {
   ): Promise<ProductBrandResponseDto> {
     const brand = await this.productBrandsService.setActive(id, body.isActive);
     return toProductBrandResponse(brand);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Brendni o\'chirish' })
+  async remove(@Param('id') id: string) {
+    await this.productBrandsService.remove(id);
+    return { message: 'Brend o\'chirildi' };
   }
 }

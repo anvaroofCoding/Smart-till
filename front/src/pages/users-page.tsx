@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
@@ -32,6 +32,8 @@ import {
 import { useQueryLoading, useQueriesLoading } from '@/hooks/use-query-loading'
 import { useListPagination } from '@/hooks/use-list-pagination'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
+import { getUserWarehouseLabel } from '@/lib/user-warehouse'
 import { formatDateDisplay } from '@/lib/date-format'
 import { cn } from '@/lib/utils'
 import {
@@ -51,6 +53,7 @@ const TABLE_HEADERS = [
   "Tug'ilgan sana",
   'Lavozim',
   'Holat',
+  'Ombor',
   'Ruxsatlar',
   'Amallar',
 ]
@@ -97,7 +100,6 @@ function UserActiveSwitch({
 
 export function UsersPage() {
   const [search, setSearch] = useState('')
-  const [actionError, setActionError] = useState<string | null>(null)
   const { page, perPage, setPage, setPerPage } = useListPagination(search)
 
   const usersQuery = useGetUsersQuery({
@@ -127,13 +129,19 @@ export function UsersPage() {
     totalPages: 1,
   }
 
+  useEffect(() => {
+    if (!usersQuery.error) return
+    notify.error(
+      getApiErrorMessage(usersQuery.error, "Ro'yxatni yuklab bo'lmadi"),
+    )
+  }, [usersQuery.error])
+
   async function handleToggleActive(user: UserRecord, isActive: boolean) {
-    setActionError(null)
     setTogglingUserId(user.id)
     try {
       await setUserStatus({ id: user.id, isActive }).unwrap()
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(err, 'Holatni o\'zgartirish amalga oshmadi'),
       )
     } finally {
@@ -260,19 +268,10 @@ export function UsersPage() {
             />
           </div>
 
-          {usersQuery.error && (
-            <p className="text-destructive text-sm">
-              {getApiErrorMessage(usersQuery.error, "Ro'yxatni yuklab bo'lmadi")}
-            </p>
-          )}
-          {actionError && (
-            <p className="text-destructive text-sm">{actionError}</p>
-          )}
-
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
-                columns={9}
+                columns={10}
                 rows={6}
                 headers={TABLE_HEADERS}
               />
@@ -293,7 +292,7 @@ export function UsersPage() {
                 <TableBody>
                   {users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-muted-foreground h-24 text-center">
+                      <TableCell colSpan={10} className="text-muted-foreground h-24 text-center">
                         Foydalanuvchilar topilmadi
                       </TableCell>
                     </TableRow>
@@ -330,6 +329,11 @@ export function UsersPage() {
                                 handleToggleActive(user, isActive)
                               }
                             />
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {getUserWarehouseLabel(user)}
+                            </span>
                           </TableCell>
                           <TableCell>
                             {user.position === 'admin' ? (

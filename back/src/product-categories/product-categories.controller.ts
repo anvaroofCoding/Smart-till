@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -39,8 +40,7 @@ export class ProductCategoriesController {
   @Get(':id')
   @ApiOperation({ summary: 'Kategoriya ma\'lumotlari' })
   async findOne(@Param('id') id: string): Promise<ProductCategoryResponseDto> {
-    const category = await this.productCategoriesService.findById(id);
-    return toProductCategoryResponse(category);
+    return this.productCategoriesService.findByIdWithUsage(id);
   }
 
   @Post()
@@ -73,5 +73,12 @@ export class ProductCategoriesController {
       body.isActive,
     );
     return toProductCategoryResponse(category);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Kategoriyani o\'chirish' })
+  async remove(@Param('id') id: string) {
+    await this.productCategoriesService.remove(id);
+    return { message: 'Kategoriya o\'chirildi' };
   }
 }

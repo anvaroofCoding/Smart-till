@@ -11,6 +11,9 @@ export interface UserRecord {
   birthDate?: string
   position: UserPosition
   allowedPages: string[]
+  allWarehouses: boolean
+  warehouseIds: string[]
+  warehouses: Array<{ id: string; name: string }>
   avatar: string
   isActive: boolean
   createdAt: string
@@ -38,6 +41,8 @@ export interface CreateUserRequest {
   birthDate?: string
   position: UserPosition
   allowedPages?: string[]
+  allWarehouses?: boolean
+  warehouseIds?: string[]
 }
 
 export interface UpdateUserRequest {
@@ -49,6 +54,8 @@ export interface UpdateUserRequest {
   birthDate?: string
   position?: UserPosition
   allowedPages?: string[]
+  allWarehouses?: boolean
+  warehouseIds?: string[]
   isActive?: boolean
 }
 

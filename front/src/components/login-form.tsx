@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
 import {
   Field,
@@ -19,7 +20,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<'form'>) {
   const navigate = useNavigate()
-  const { login, isLoggingIn, loginError } = useAuth()
+  const { login, isLoggingIn } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -40,12 +41,11 @@ export function LoginForm({
       await login({ login: loginValue, password })
       navigate('/kassir/buyurtmalar', { replace: true })
     } catch (error) {
-      setFormError(getApiErrorMessage(error, 'Kirish amalga oshmadi'))
+      notify.error(getApiErrorMessage(error, 'Kirish amalga oshmadi'))
     }
   }
 
-  const errorMessage =
-    formError ?? (loginError ? getApiErrorMessage(loginError) : null)
+  const errorMessage = formError
 
   return (
     <form

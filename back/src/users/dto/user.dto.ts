@@ -76,6 +76,23 @@ export class CreateUserDto {
   @IsArray()
   @IsString({ each: true })
   allowedPages?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Barcha omborlarga ruxsat',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  allWarehouses?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Ishlaydigan omborlar ID ro\'yxati',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  warehouseIds?: string[];
 }
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
@@ -135,6 +152,15 @@ export class UserResponseDto {
 
   @ApiProperty({ type: [String] })
   allowedPages: string[];
+
+  @ApiProperty()
+  allWarehouses: boolean;
+
+  @ApiProperty({ type: [String] })
+  warehouseIds: string[];
+
+  @ApiProperty({ type: [Object] })
+  warehouses: Array<{ id: string; name: string }>;
 
   @ApiProperty()
   avatar: string;

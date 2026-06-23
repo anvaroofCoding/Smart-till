@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   BrandFormDialog,
@@ -7,6 +7,7 @@ import {
 import { AppIcon } from '@/components/icons/app-icon'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
+import { CatalogDeleteButton } from '@/components/shared/catalog-delete-button'
 import {
   DataTableSkeleton,
   QueryRefreshIndicator,
@@ -34,9 +35,11 @@ import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
   useCreateProductBrandMutation,
+  useDeleteProductBrandMutation,
   useGetProductBrandsQuery,
   useSetProductBrandStatusMutation,
   useUpdateProductBrandMutation,
@@ -87,8 +90,8 @@ export function ProductBrandsPage() {
   const [editingBrand, setEditingBrand] = useState<ProductBrandRecord | null>(
     null,
   )
-  const [actionError, setActionError] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { page, perPage, setPage, setPerPage } = useListPagination(search)
 
   const brandsQuery = useGetProductBrandsQuery({
@@ -100,6 +103,7 @@ export function ProductBrandsPage() {
   const [createBrand, createState] = useCreateProductBrandMutation()
   const [updateBrand, updateState] = useUpdateProductBrandMutation()
   const [setBrandStatus] = useSetProductBrandStatusMutation()
+  const [deleteBrand] = useDeleteProductBrandMutation()
 
   const { showSkeleton: showTableSkeleton, showRefreshing: showTableRefreshing } =
     useQueryLoading(brandsQuery)
@@ -117,23 +121,26 @@ export function ProductBrandsPage() {
   }
   const isSaving = createState.isLoading || updateState.isLoading
 
+  useEffect(() => {
+    if (!brandsQuery.error) return
+    notify.error(
+      getApiErrorMessage(brandsQuery.error, "Ro'yxatni yuklab bo'lmadi"),
+    )
+  }, [brandsQuery.error])
+
   function openCreateDialog() {
     setDialogMode('create')
     setEditingBrand(null)
-    setActionError(null)
     setDialogOpen(true)
   }
 
   function openEditDialog(brand: ProductBrandRecord) {
     setDialogMode('edit')
     setEditingBrand(brand)
-    setActionError(null)
     setDialogOpen(true)
   }
 
   async function handleFormSubmit(values: BrandFormValues) {
-    setActionError(null)
-
     const payload = {
       name: values.name.trim(),
       description: values.description.trim() || undefined,
@@ -143,15 +150,17 @@ export function ProductBrandsPage() {
     try {
       if (dialogMode === 'create') {
         await createBrand(payload).unwrap()
+        notify.success('Brend qo\'shildi')
       } else if (editingBrand) {
         await updateBrand({
           id: editingBrand.id,
           body: payload,
         }).unwrap()
+        notify.success('Brend saqlandi')
       }
       setDialogOpen(false)
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(
           err,
           dialogMode === 'create'
@@ -163,16 +172,31 @@ export function ProductBrandsPage() {
   }
 
   async function handleToggleActive(brand: ProductBrandRecord, isActive: boolean) {
-    setActionError(null)
     setTogglingId(brand.id)
     try {
       await setBrandStatus({ id: brand.id, isActive }).unwrap()
     } catch (err) {
-      setActionError(
+      notify.error(
         getApiErrorMessage(err, 'Holatni o\'zgartirish amalga oshmadi'),
       )
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  async function handleDelete(brand: ProductBrandRecord) {
+    setDeletingId(brand.id)
+    try {
+      await deleteBrand(brand.id).unwrap()
+      notify.success('Brend o\'chirildi')
+    } catch (err) {
+      notify.error(
+        getApiErrorMessage(err, 'Brendni o\'chirib bo\'lmadi'),
+        { title: 'O\'chirib bo\'lmadi' },
+      )
+      throw err
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -213,18 +237,6 @@ export function ProductBrandsPage() {
               className="pl-9"
             />
           </div>
-
-          {brandsQuery.error && (
-            <p className="text-destructive text-sm">
-              {getApiErrorMessage(
-                brandsQuery.error,
-                "Ro'yxatni yuklab bo'lmadi",
-              )}
-            </p>
-          )}
-          {actionError && !dialogOpen && (
-            <p className="text-destructive text-sm">{actionError}</p>
-          )}
 
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
@@ -297,14 +309,23 @@ export function ProductBrandsPage() {
                             />
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(brand)}
-                              aria-label="Tahrirlash"
-                            >
-                              <AppIcon name="pencil" />
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(brand)}
+                                aria-label="Tahrirlash"
+                              >
+                                <AppIcon name="pencil" />
+                              </Button>
+                              <CatalogDeleteButton
+                                name={brand.name}
+                                productsCount={brand.productsCount ?? 0}
+                                entityType="brend"
+                                isDeleting={deletingId === brand.id}
+                                onConfirmDelete={() => handleDelete(brand)}
+                              />
+                            </div>
                           </TableCell>
                         </TableRow>
                       )
@@ -334,7 +355,6 @@ export function ProductBrandsPage() {
         mode={dialogMode}
         brand={editingBrand}
         isSaving={isSaving}
-        error={actionError}
         onSubmit={handleFormSubmit}
       />
     </div>

@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { sidebarMenu } from '@/config/sidebar-menu'
+import { useGetWarehousesQuery } from '@/store/api/warehouses.api'
 import type { UserPosition } from '@/types/api.types'
 import {
   POSITION_LABELS,
@@ -51,6 +52,8 @@ export interface UserFormValues {
   confirmPassword: string
   position: UserPosition
   allowedPages: string[]
+  allWarehouses: boolean
+  warehouseIds: string[]
   isActive: boolean
 }
 
@@ -64,6 +67,8 @@ export const emptyUserForm: UserFormValues = {
   confirmPassword: '',
   position: 'kassir',
   allowedPages: [],
+  allWarehouses: false,
+  warehouseIds: [],
   isActive: true,
 }
 
@@ -78,6 +83,8 @@ export function userToFormValues(user: UserRecord): UserFormValues {
     confirmPassword: '',
     position: user.position,
     allowedPages: user.allowedPages ?? [],
+    allWarehouses: user.allWarehouses ?? user.position === 'admin',
+    warehouseIds: user.warehouseIds ?? [],
     isActive: user.isActive,
   }
 }
@@ -110,6 +117,14 @@ export function validateUserForm(
     return 'Kamida bitta sahifaga ruxsat bering'
   }
 
+  if (
+    values.position !== 'admin' &&
+    !values.allWarehouses &&
+    values.warehouseIds.length === 0
+  ) {
+    return 'Kamida bitta omborni tanlang yoki barcha omborlarga ruxsat bering'
+  }
+
   return null
 }
 
@@ -125,6 +140,9 @@ export function buildUserPayload(
     birthDate: form.birthDate || undefined,
     position: form.position,
     allowedPages: form.position === 'admin' ? [] : form.allowedPages,
+    allWarehouses: form.position === 'admin' ? true : form.allWarehouses,
+    warehouseIds:
+      form.position === 'admin' || form.allWarehouses ? [] : form.warehouseIds,
   }
 
   if (form.password) {
@@ -158,6 +176,8 @@ export function UserForm({
   const [form, setForm] = useState<UserFormValues>(initialValues)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const warehousesQuery = useGetWarehousesQuery({ page: 1, perPage: 100 })
+  const activeWarehouses = warehousesQuery.data?.data.filter((item) => item.isActive) ?? []
 
   const sectionPages = useMemo(
     () =>
@@ -198,6 +218,15 @@ export function UserForm({
         allowedPages: prev.allowedPages.filter((page) => !pages.includes(page)),
       }
     })
+  }
+
+  function toggleWarehouse(warehouseId: string, checked: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      warehouseIds: checked
+        ? [...prev.warehouseIds, warehouseId]
+        : prev.warehouseIds.filter((id) => id !== warehouseId),
+    }))
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -281,9 +310,17 @@ export function UserForm({
                   <FieldLabel htmlFor="position">Lavozim</FieldLabel>
                   <Select
                     value={form.position}
-                    onValueChange={(value) =>
-                      updateField('position', value as UserPosition)
-                    }
+                    onValueChange={(value) => {
+                      const position = value as UserPosition
+                      updateField('position', position)
+                      if (position === 'admin') {
+                        setForm((prev) => ({
+                          ...prev,
+                          allWarehouses: true,
+                          warehouseIds: [],
+                        }))
+                      }
+                    }}
                     disabled={isSaving}
                   >
                     <SelectTrigger id="position" className="w-full">
@@ -416,6 +453,74 @@ export function UserForm({
             </div>
           </CardContent>
         </Card>
+
+        {form.position !== 'admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ombor ruxsati</CardTitle>
+              <CardDescription>
+                Foydalanuvchi qaysi omborda ishlashini yoki barcha omborlarni
+                ko&apos;rishini belgilang. Tanlangan ombor uning filiali hisoblanadi.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-1">
+                  <FieldLabel htmlFor="all-warehouses">
+                    Barcha omborlarga ruxsat
+                  </FieldLabel>
+                  <FieldDescription>
+                    Yoqilganda foydalanuvchi barcha omborlardagi ma&apos;lumotlarni ko&apos;radi.
+                  </FieldDescription>
+                </div>
+                <Switch
+                  id="all-warehouses"
+                  checked={form.allWarehouses}
+                  onCheckedChange={(checked) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      allWarehouses: checked,
+                      warehouseIds: checked ? [] : prev.warehouseIds,
+                    }))
+                  }
+                  disabled={isSaving}
+                />
+              </div>
+
+              {!form.allWarehouses && (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {activeWarehouses.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      Faol omborlar topilmadi. Avval ombor yarating.
+                    </p>
+                  ) : (
+                    activeWarehouses.map((warehouse) => (
+                      <div
+                        key={warehouse.id}
+                        className="flex items-center gap-3 rounded-lg border p-3"
+                      >
+                        <Checkbox
+                          id={`warehouse-${warehouse.id}`}
+                          checked={form.warehouseIds.includes(warehouse.id)}
+                          onCheckedChange={(checked) =>
+                            toggleWarehouse(warehouse.id, checked === true)
+                          }
+                          disabled={isSaving}
+                        />
+                        <Label
+                          htmlFor={`warehouse-${warehouse.id}`}
+                          className="cursor-pointer text-sm font-medium"
+                        >
+                          {warehouse.name}
+                        </Label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {form.position !== 'admin' && (
           <Card>

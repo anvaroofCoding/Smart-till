@@ -49,6 +49,9 @@ export interface AuthUser {
   phone: string
   birthDate?: string
   allowedPages: string[]
+  allWarehouses: boolean
+  warehouseIds: string[]
+  warehouses: Array<{ id: string; name: string }>
 }
 
 export interface LoginRequest {

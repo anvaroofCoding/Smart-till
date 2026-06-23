@@ -44,6 +44,9 @@ export class ProductBrandResponseDto {
   @ApiProperty()
   isActive: boolean;
 
+  @ApiProperty({ description: 'Ushbu brenddan foydalanilgan maxsulotlar soni' })
+  productsCount: number;
+
   @ApiProperty()
   createdAt: Date;
 

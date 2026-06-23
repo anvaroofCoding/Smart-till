@@ -73,11 +73,23 @@ export async function axiosBaseQuery<T>(
     return { data: response.data }
   } catch (error) {
     const axiosError = error as AxiosError<ApiErrorBody>
+    const responseData = axiosError.response?.data
+    const status = axiosError.response?.status ?? 500
+    const responseMessage =
+      responseData && typeof responseData === 'object'
+        ? Array.isArray(responseData.message)
+          ? responseData.message.join(', ')
+          : typeof responseData.message === 'string'
+            ? responseData.message
+            : undefined
+        : undefined
+
     return {
-      error: axiosError.response?.data ?? {
-        status: axiosError.response?.status ?? 500,
-        message: axiosError.message,
-        error: 'NetworkError',
+      error: {
+        status,
+        statusCode: status,
+        message: responseMessage ?? axiosError.message,
+        error: responseData?.error ?? 'NetworkError',
       },
     }
   }
