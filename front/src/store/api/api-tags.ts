@@ -8,6 +8,8 @@ export const API_TAGS = {
   Inventory: 'Inventory',
   Warehouse: 'Warehouse',
   StockReceipt: 'StockReceipt',
+  PaymentType: 'PaymentType',
+  PriceSetting: 'PriceSetting',
   Order: 'Order',
   Health: 'Health',
 } as const

@@ -23,11 +23,21 @@ import { StockReceiptAcceptListPage } from '@/pages/stock-receipt-accept-list-pa
 import { StockReceiptAcceptPage } from '@/pages/stock-receipt-accept-page'
 import { StockReceiptCreatePage } from '@/pages/stock-receipt-create-page'
 import { StockReceiptDetailPage } from '@/pages/stock-receipt-detail-page'
+import { WarehouseProductQuantitiesPage } from '@/pages/warehouse-product-quantities-page'
+import { WarehouseStockDetailPage } from '@/pages/warehouse-stock-detail-page'
+import { PaymentTypeCreatePage } from '@/pages/payment-type-create-page'
+import { PaymentTypeEditPage } from '@/pages/payment-type-edit-page'
+import { PaymentTypesPage } from '@/pages/payment-types-page'
+import { OrderCreatePage } from '@/pages/order-create-page'
 import { PlaceholderPage } from '@/pages/placeholder-page'
+import { PriceSettingsPage } from '@/pages/price-settings-page'
+import { PriceSettingCreatePage } from '@/pages/price-setting-create-page'
+import { PriceSettingEditPage } from '@/pages/price-setting-edit-page'
 
 const menuRoutes = flattenSidebarRoutes()
 
 const SETTINGS_PATH = 'sozlamalar/dastur'
+const PRICE_SETTINGS_PATH = 'sozlamalar/narx'
 const USERS_PATH = 'sozlamalar/foydalanuvchilar'
 const PRODUCT_CATEGORIES_PATH = 'maxsulotlar/kategoriya'
 const PRODUCT_BRANDS_PATH = 'maxsulotlar/brend'
@@ -44,8 +54,16 @@ const STOCK_RECEIPT_CREATE_PATH = 'omborlar/maxsulot-kirim/yaratish'
 const STOCK_RECEIPT_DETAIL_PATH = 'omborlar/maxsulot-kirim/:id'
 const STOCK_RECEIPT_ACCEPT_LIST_PATH = 'omborlar/kirim-qabul'
 const STOCK_RECEIPT_ACCEPT_PATH = 'omborlar/kirim-qabul/:id'
+const WAREHOUSE_STOCK_PATH = 'omborlar/maxsulotlar-soni'
+const WAREHOUSE_STOCK_DETAIL_PATH = 'omborlar/maxsulotlar-soni/:id'
+const PAYMENT_TYPES_PATH = 'to-lov/turlari'
+const PAYMENT_TYPE_CREATE_PATH = 'to-lov/turlari/yaratish'
+const PAYMENT_TYPE_EDIT_PATH = 'to-lov/turlari/:id/tahrirlash'
 const USER_CREATE_PATH = 'sozlamalar/foydalanuvchilar/yaratish'
 const USER_EDIT_PATH = 'sozlamalar/foydalanuvchilar/:id/tahrirlash'
+const ORDER_CREATE_PATH = 'kassir/buyurtma-yaratish'
+const PRICE_SETTING_CREATE_PATH = 'sozlamalar/narx/yaratish'
+const PRICE_SETTING_EDIT_PATH = 'sozlamalar/narx/:id/tahrirlash'
 
 const router = createBrowserRouter([
   {
@@ -74,6 +92,8 @@ const router = createBrowserRouter([
             element:
               route.path === SETTINGS_PATH ? (
                 <AppSettingsPage />
+              ) : route.path === PRICE_SETTINGS_PATH ? (
+                <PriceSettingsPage />
               ) : route.path === USERS_PATH ? (
                 <UsersPage />
               ) : route.path === PRODUCT_CATEGORIES_PATH ? (
@@ -84,16 +104,30 @@ const router = createBrowserRouter([
                 <ProductsPage />
               ) : route.path === SUPPLIERS_PATH ? (
                 <SuppliersPage />
+              ) : route.path === PAYMENT_TYPES_PATH ? (
+                <PaymentTypesPage />
               ) : route.path === WAREHOUSES_PATH ? (
                 <WarehousesPage />
               ) : route.path === STOCK_RECEIPTS_PATH ? (
                 <StockReceiptsPage />
               ) : route.path === STOCK_RECEIPT_ACCEPT_LIST_PATH ? (
                 <StockReceiptAcceptListPage />
+              ) : route.path === ORDER_CREATE_PATH ? (
+                <OrderCreatePage />
+              ) : route.path === WAREHOUSE_STOCK_PATH ? (
+                <WarehouseProductQuantitiesPage />
               ) : (
                 <PlaceholderPage title={route.title} section={route.section} />
               ),
           })),
+          {
+            path: PAYMENT_TYPE_CREATE_PATH,
+            element: <PaymentTypeCreatePage />,
+          },
+          {
+            path: PAYMENT_TYPE_EDIT_PATH,
+            element: <PaymentTypeEditPage />,
+          },
           {
             path: USER_CREATE_PATH,
             element: <UserCreatePage />,
@@ -133,6 +167,18 @@ const router = createBrowserRouter([
           {
             path: STOCK_RECEIPT_ACCEPT_PATH,
             element: <StockReceiptAcceptPage />,
+          },
+          {
+            path: WAREHOUSE_STOCK_DETAIL_PATH,
+            element: <WarehouseStockDetailPage />,
+          },
+          {
+            path: PRICE_SETTING_CREATE_PATH,
+            element: <PriceSettingCreatePage />,
+          },
+          {
+            path: PRICE_SETTING_EDIT_PATH,
+            element: <PriceSettingEditPage />,
           },
         ],
       },

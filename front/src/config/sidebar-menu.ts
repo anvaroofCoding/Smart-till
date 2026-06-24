@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   ClipboardList,
+  CreditCard,
   HandCoins,
   Package,
   Settings,
@@ -92,6 +93,14 @@ const sidebarMenuSource: SidebarMenuItem[] = [
     items: [
       { title: 'Maxsulotlar', url: '/sotuvchilar/maxsulotlar' },
       { title: 'Buyurtmalar', url: '/sotuvchilar/buyurtmalar' },
+    ],
+  },
+  {
+    title: "To'lov",
+    url: '/to-lov',
+    icon: CreditCard,
+    items: [
+      { title: "To'lov turlari", url: '/to-lov/turlari' },
     ],
   },
   {

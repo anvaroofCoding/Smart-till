@@ -82,6 +82,7 @@ export function StockReceiptsPage() {
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Jadval ustunlari ostidagi filterlar orqali kirimlarni qidiring.
+            Batafsil uchun qatorni bosing.
           </p>
         </div>
         <Button asChild>
@@ -108,18 +109,9 @@ export function StockReceiptsPage() {
             showTableRefreshing={showTableRefreshing}
             onFilterChange={handleFilterChange}
             onPageChange={setPage}
-            onPerPageChange={setPerPage}
+            onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
             emptyMessage="Kirimlar topilmadi"
-            renderActions={(receipt) => (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`${LIST_PATH}/${receipt.id}`)}
-              >
-                Ko&apos;rish
-                <AppIcon name="chevron-right" />
-              </Button>
-            )}
+            onRowClick={(receipt) => navigate(`${LIST_PATH}/${receipt.id}`)}
           />
         </CardContent>
       </Card>

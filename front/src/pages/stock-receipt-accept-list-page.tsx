@@ -26,13 +26,13 @@ import { notify } from '@/lib/notify'
 import { useGetStockReceiptsQuery } from '@/store/api/stock-receipts.api'
 
 const LIST_PATH = '/omborlar/kirim-qabul'
+const DETAIL_PATH = '/omborlar/maxsulot-kirim'
 
 export function StockReceiptAcceptListPage() {
   const navigate = useNavigate()
-  const [filters, setFilters] = useState<StockReceiptTableFilters>({
-    ...emptyStockReceiptTableFilters,
-    status: 'in_progress',
-  })
+  const [filters, setFilters] = useState<StockReceiptTableFilters>(
+    emptyStockReceiptTableFilters,
+  )
 
   const debouncedFilters = useDebouncedValue(filters, 300)
   const filterQuery = useMemo(
@@ -85,8 +85,8 @@ export function StockReceiptAcceptListPage() {
             Kirimni qabul qilish
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Jadval ustunlari ostidagi filterlar orqali jarayondagi kirimlarni
-            qidiring va qabul qiling.
+            Yuborilgan kirimlarni qidiring yoki qatorni bosib qabul qiling va
+            tarixni ko&apos;ring.
           </p>
         </div>
         <Button variant="outline" asChild>
@@ -101,7 +101,7 @@ export function StockReceiptAcceptListPage() {
         <CardHeader className="shrink-0">
           <CardTitle className="flex items-center gap-2">
             <AppIcon name="check" />
-            Qabul qilish kutilmoqda
+            Yuborilgan kirimlar
             <Badge variant="secondary">{paginationMeta.total}</Badge>
           </CardTitle>
         </CardHeader>
@@ -114,17 +114,15 @@ export function StockReceiptAcceptListPage() {
             showTableRefreshing={showTableRefreshing}
             onFilterChange={handleFilterChange}
             onPageChange={setPage}
-            onPerPageChange={setPerPage}
-            emptyMessage="Qabul qilish uchun kirimlar topilmadi"
-            renderActions={(receipt) => (
-              <Button
-                size="sm"
-                onClick={() => navigate(`${LIST_PATH}/${receipt.id}`)}
-              >
-                <AppIcon name="check" />
-                Qabul qilish
-              </Button>
-            )}
+            onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
+            emptyMessage="Yuborilgan kirimlar topilmadi"
+            onRowClick={(receipt) => {
+              if (receipt.status === 'in_progress') {
+                navigate(`${LIST_PATH}/${receipt.id}`)
+                return
+              }
+              navigate(`${DETAIL_PATH}/${receipt.id}`)
+            }}
           />
         </CardContent>
       </Card>

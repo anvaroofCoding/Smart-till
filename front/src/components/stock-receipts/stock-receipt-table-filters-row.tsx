@@ -163,8 +163,6 @@ export function StockReceiptTableFiltersRow({
           aria-label="Umumiy narx bo'yicha filter"
         />
       </TableCell>
-
-      <TableCell className={TABLE_FILTER_CELL_CLASS} />
     </TableRow>
   )
 }

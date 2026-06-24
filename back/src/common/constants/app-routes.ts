@@ -25,6 +25,7 @@ export const APP_PAGE_PATHS = [
   '/inventarizatsiya/ro-yxat',
   '/qarz/qarzdorlar',
   '/yetkazib-beruvchilar/ro-yxat',
+  '/to-lov/turlari',
 ] as const
 
 export const TOTAL_APP_PAGES = APP_PAGE_PATHS.length

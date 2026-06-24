@@ -15,6 +15,10 @@ import { ProductsModule } from './products/products.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { WarehousesModule } from './warehouses/warehouses.module';
 import { StockReceiptsModule } from './stock-receipts/stock-receipts.module';
+import { WarehouseStockModule } from './warehouse-stock/warehouse-stock.module';
+import { PaymentTypesModule } from './payment-types/payment-types.module';
+import { PriceSettingsModule } from './price-settings/price-settings.module';
+import { OrdersModule } from './orders/orders.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -35,6 +39,10 @@ import { RolesGuard } from './common/guards/roles.guard';
     SuppliersModule,
     WarehousesModule,
     StockReceiptsModule,
+    WarehouseStockModule,
+    PaymentTypesModule,
+    PriceSettingsModule,
+    OrdersModule,
     HealthModule,
     WebsocketModule,
   ],

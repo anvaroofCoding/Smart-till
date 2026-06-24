@@ -69,5 +69,4 @@ export const STOCK_RECEIPT_TABLE_HEADERS = [
   'Saqlangan vaqti',
   'Kurs',
   'Umumiy narx',
-  'Amallar',
 ] as const

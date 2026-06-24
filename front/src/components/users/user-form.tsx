@@ -19,6 +19,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { UzbekPhoneInput } from '@/components/ui/uzbek-phone-input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { sidebarMenu } from '@/config/sidebar-menu'
+import { buildUzbekPhone, parseUzbekPhoneLocal } from '@/lib/phone'
 import { useGetWarehousesQuery } from '@/store/api/warehouses.api'
 import type { UserPosition } from '@/types/api.types'
 import {
@@ -77,7 +79,7 @@ export function userToFormValues(user: UserRecord): UserFormValues {
     firstName: user.firstName,
     lastName: user.lastName,
     login: user.login,
-    phone: user.phone,
+    phone: parseUzbekPhoneLocal(user.phone),
     birthDate: user.birthDate ?? '',
     password: '',
     confirmPassword: '',
@@ -136,7 +138,7 @@ export function buildUserPayload(
     firstName: form.firstName.trim(),
     lastName: form.lastName.trim(),
     login: form.login.trim(),
-    phone: form.phone.trim(),
+    phone: buildUzbekPhone(form.phone),
     birthDate: form.birthDate || undefined,
     position: form.position,
     allowedPages: form.position === 'admin' ? [] : form.allowedPages,
@@ -286,11 +288,10 @@ export function UserForm({
 
                 <Field>
                   <FieldLabel htmlFor="phone">Telefon raqami</FieldLabel>
-                  <Input
+                  <UzbekPhoneInput
                     id="phone"
                     value={form.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
-                    placeholder="+998 90 123 45 67"
+                    onChange={(phone) => updateField('phone', phone)}
                     disabled={isSaving}
                   />
                 </Field>

@@ -195,9 +195,6 @@ export function UsersPage() {
               <AppIcon name="users" />
               Foydalanuvchilar ro&apos;yxati
             </CardTitle>
-            <CardDescription>
-              Login, telefon, lavozim va ruxsat etilgan sahifalar
-            </CardDescription>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-hidden">
             <DataTableSkeleton
@@ -253,9 +250,6 @@ export function UsersPage() {
             <AppIcon name="users" />
             Foydalanuvchilar ro&apos;yxati
           </CardTitle>
-          <CardDescription>
-            Login, telefon, lavozim va ruxsat etilgan sahifalar
-          </CardDescription>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <div className="relative w-full max-w-md shrink-0">

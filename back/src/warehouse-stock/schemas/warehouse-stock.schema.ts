@@ -16,6 +16,12 @@ export class WarehouseStock {
   @Prop({ default: 0, min: 0 })
   quantity: number;
 
+  @Prop({ default: 0, min: 0 })
+  lastUnitPrice: number;
+
+  @Prop({ default: 1, min: 0.0001 })
+  lastExchangeRate: number;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

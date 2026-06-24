@@ -16,6 +16,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { UzbekPhoneInput } from '@/components/ui/uzbek-phone-input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -32,6 +33,7 @@ import {
   SUPPLIER_CURRENCIES,
   SUPPLIER_CURRENCY_LABELS,
 } from '@/lib/currency'
+import { buildUzbekPhone, parseUzbekPhoneLocal } from '@/lib/phone'
 import { cn } from '@/lib/utils'
 import type { CreateSupplierRequest, SupplierRecord } from '@/types/supplier.types'
 
@@ -61,7 +63,7 @@ export function supplierToFormValues(
   return {
     name: supplier.name,
     officialName: supplier.officialName,
-    phone: supplier.phone,
+    phone: parseUzbekPhoneLocal(supplier.phone),
     address: supplier.address,
     comment: supplier.comment,
     currency: supplier.currency,
@@ -80,7 +82,7 @@ export function buildSupplierPayload(
   return {
     name: values.name.trim(),
     officialName: values.officialName.trim(),
-    phone: values.phone.trim(),
+    phone: buildUzbekPhone(values.phone),
     address: values.address.trim(),
     comment: values.comment.trim(),
     currency: values.currency,
@@ -167,13 +169,12 @@ export function SupplierForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="supplier-phone">Telefon raqami</FieldLabel>
-                <Input
+                <UzbekPhoneInput
                   id="supplier-phone"
                   value={form.phone}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, phone: e.target.value }))
+                  onChange={(phone) =>
+                    setForm((prev) => ({ ...prev, phone }))
                   }
-                  placeholder="+998901234567"
                   disabled={isSaving}
                 />
               </Field>

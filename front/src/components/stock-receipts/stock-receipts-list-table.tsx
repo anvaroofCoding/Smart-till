@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react'
-
 import { DataTablePagination } from '@/components/data-table-pagination'
 import {
   DataTableSkeleton,
@@ -44,7 +42,7 @@ interface StockReceiptsListTableProps {
   onFilterChange: (patch: Partial<StockReceiptTableFilters>) => void
   onPageChange: (page: number) => void
   onPerPageChange: (perPage: number) => void
-  renderActions: (receipt: StockReceiptRecord) => ReactNode
+  onRowClick: (receipt: StockReceiptRecord) => void
   emptyMessage: string
 }
 
@@ -57,7 +55,7 @@ export function StockReceiptsListTable({
   onFilterChange,
   onPageChange,
   onPerPageChange,
-  renderActions,
+  onRowClick,
   emptyMessage,
 }: StockReceiptsListTableProps) {
   const columnCount = STOCK_RECEIPT_TABLE_HEADERS.length
@@ -81,11 +79,9 @@ export function StockReceiptsListTable({
                     className={
                       header === '№'
                         ? 'w-12 text-center'
-                        : header === 'Amallar'
-                          ? 'text-right'
-                          : header === 'ID'
-                            ? 'min-w-[100px]'
-                            : undefined
+                        : header === 'ID'
+                          ? 'min-w-[100px]'
+                          : undefined
                     }
                   >
                     {header}
@@ -119,10 +115,12 @@ export function StockReceiptsListTable({
                     <TableRow
                       key={receipt.id}
                       className={cn(
+                        'hover:bg-muted/50 cursor-pointer',
                         (receipt.status === 'completed' ||
                           receipt.status === 'cancelled') &&
                           'opacity-80',
                       )}
+                      onClick={() => onRowClick(receipt)}
                     >
                       <TableCell className="text-muted-foreground text-center tabular-nums">
                         {rowNumber}
@@ -151,9 +149,6 @@ export function StockReceiptsListTable({
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(receipt.totalAmount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {renderActions(receipt)}
                       </TableCell>
                     </TableRow>
                   )

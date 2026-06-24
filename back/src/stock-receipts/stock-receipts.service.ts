@@ -20,6 +20,10 @@ import {
   WarehouseStockDocument,
 } from '../warehouse-stock/schemas/warehouse-stock.schema';
 import {
+  StockMovement,
+  StockMovementDocument,
+} from '../stock-movements/schemas/stock-movement.schema';
+import {
   AddStockReceiptItemDto,
   AcceptStockReceiptDto,
   CreateStockReceiptDto,
@@ -46,6 +50,8 @@ export class StockReceiptsService {
     private readonly receiptModel: Model<StockReceiptDocument>,
     @InjectModel(WarehouseStock.name)
     private readonly stockModel: Model<WarehouseStockDocument>,
+    @InjectModel(StockMovement.name)
+    private readonly movementModel: Model<StockMovementDocument>,
     @InjectModel(Supplier.name)
     private readonly supplierModel: Model<SupplierDocument>,
     @InjectModel(Warehouse.name)
@@ -278,6 +284,8 @@ export class StockReceiptsService {
     }
 
     const warehouseId = receipt.warehouseId;
+    const supplier = await this.supplierModel.findById(receipt.supplierId).exec();
+    const supplierName = supplier?.name ?? '';
     let receivedCount = 0;
 
     for (const entry of dto.items) {
@@ -308,13 +316,17 @@ export class StockReceiptsService {
       item.receivedQuantity = receivedQuantity;
       receivedCount += 1;
 
-      await this.stockModel.findOneAndUpdate(
+      const updatedStock = await this.stockModel.findOneAndUpdate(
         {
           warehouseId,
           productId: item.productId,
         },
         {
           $inc: { quantity: receivedQuantity },
+          $set: {
+            lastUnitPrice: item.unitPrice,
+            lastExchangeRate: receipt.exchangeRate,
+          },
           $setOnInsert: {
             warehouseId,
             productId: item.productId,
@@ -322,6 +334,21 @@ export class StockReceiptsService {
         },
         { upsert: true, new: true },
       );
+
+      await this.movementModel.create({
+        warehouseId,
+        productId: item.productId,
+        delta: receivedQuantity,
+        balanceAfter: updatedStock?.quantity ?? receivedQuantity,
+        sourceType: 'receipt_accept',
+        sourceId: receipt._id,
+        sourceName: receipt.name,
+        supplierId: receipt.supplierId,
+        supplierName,
+        unitPrice: item.unitPrice,
+        exchangeRate: receipt.exchangeRate,
+        notes: receipt.notes ?? '',
+      });
     }
 
     if (receivedCount === 0) {
