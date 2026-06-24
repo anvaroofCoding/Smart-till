@@ -29,6 +29,8 @@ import { PaymentTypeCreatePage } from '@/pages/payment-type-create-page'
 import { PaymentTypeEditPage } from '@/pages/payment-type-edit-page'
 import { PaymentTypesPage } from '@/pages/payment-types-page'
 import { OrderCreatePage } from '@/pages/order-create-page'
+import { OrderEditPage } from '@/pages/order-edit-page'
+import { OrdersPage } from '@/pages/orders-page'
 import { PlaceholderPage } from '@/pages/placeholder-page'
 import { PriceSettingsPage } from '@/pages/price-settings-page'
 import { PriceSettingCreatePage } from '@/pages/price-setting-create-page'
@@ -62,6 +64,8 @@ const PAYMENT_TYPE_EDIT_PATH = 'to-lov/turlari/:id/tahrirlash'
 const USER_CREATE_PATH = 'sozlamalar/foydalanuvchilar/yaratish'
 const USER_EDIT_PATH = 'sozlamalar/foydalanuvchilar/:id/tahrirlash'
 const ORDER_CREATE_PATH = 'kassir/buyurtma-yaratish'
+const ORDERS_PATH = 'kassir/buyurtmalar'
+const ORDER_EDIT_PATH = 'kassir/buyurtmalar/:id'
 const PRICE_SETTING_CREATE_PATH = 'sozlamalar/narx/yaratish'
 const PRICE_SETTING_EDIT_PATH = 'sozlamalar/narx/:id/tahrirlash'
 
@@ -114,6 +118,8 @@ const router = createBrowserRouter([
                 <StockReceiptAcceptListPage />
               ) : route.path === ORDER_CREATE_PATH ? (
                 <OrderCreatePage />
+              ) : route.path === ORDERS_PATH ? (
+                <OrdersPage />
               ) : route.path === WAREHOUSE_STOCK_PATH ? (
                 <WarehouseProductQuantitiesPage />
               ) : (
@@ -171,6 +177,10 @@ const router = createBrowserRouter([
           {
             path: WAREHOUSE_STOCK_DETAIL_PATH,
             element: <WarehouseStockDetailPage />,
+          },
+          {
+            path: ORDER_EDIT_PATH,
+            element: <OrderEditPage />,
           },
           {
             path: PRICE_SETTING_CREATE_PATH,

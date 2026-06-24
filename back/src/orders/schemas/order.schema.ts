@@ -6,7 +6,7 @@ import { User } from '../../users/schemas/user.schema';
 
 export type OrderDocument = HydratedDocument<Order>;
 
-export const ORDER_STATUSES = ['confirmed', 'cancelled'] as const;
+export const ORDER_STATUSES = ['draft', 'confirmed', 'cancelled'] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 @Schema({ _id: false })
@@ -60,7 +60,7 @@ export class Order {
   @Prop({ default: '', trim: true })
   customerName: string;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ default: '', trim: true })
   customerPhone: string;
 
   @Prop({ default: '', trim: true })
@@ -102,7 +102,7 @@ export class Order {
   @Prop({ default: 0, min: 0 })
   remainingTotal: number;
 
-  @Prop({ required: true, enum: ORDER_STATUSES, default: 'confirmed' })
+  @Prop({ required: true, enum: ORDER_STATUSES, default: 'draft' })
   status: OrderStatus;
 
   @Prop({ type: Types.ObjectId, ref: User.name })

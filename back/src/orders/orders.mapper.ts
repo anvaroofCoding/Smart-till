@@ -1,7 +1,10 @@
 import { OrderResponseDto } from './dto/order.dto';
 import { OrderDocument } from './schemas/order.schema';
 
-export function toOrderResponse(order: OrderDocument): OrderResponseDto {
+export function toOrderResponse(
+  order: OrderDocument,
+  createdByName = '',
+): OrderResponseDto {
   return {
     id: order._id.toString(),
     customerName: order.customerName ?? '',
@@ -34,6 +37,7 @@ export function toOrderResponse(order: OrderDocument): OrderResponseDto {
     paidTotal: order.paidTotal ?? 0,
     remainingTotal: order.remainingTotal ?? 0,
     status: order.status,
+    createdByName,
     createdAt: (order as OrderDocument & { createdAt: Date }).createdAt,
     updatedAt: (order as OrderDocument & { updatedAt: Date }).updatedAt,
   };

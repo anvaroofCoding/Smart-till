@@ -45,6 +45,22 @@ export interface CreateOrderPaymentRequest {
   installmentInterestPercent?: number
 }
 
+export interface CreateDraftOrderRequest {
+  items: CreateOrderItemRequest[]
+}
+
+export interface UpdateOrderRequest {
+  customerName?: string
+  customerPhone?: string
+  customerRegion?: string
+  customerDistrict?: string
+  customerArea?: string
+  customerAddress?: string
+  comment?: string
+  items?: CreateOrderItemRequest[]
+  payments?: CreateOrderPaymentRequest[]
+}
+
 export interface CreateOrderRequest {
   customerName?: string
   customerPhone: string
@@ -89,6 +105,7 @@ export interface OrderRecord {
   paidTotal: number
   remainingTotal: number
   status: string
+  createdByName?: string
   createdAt: string
   updatedAt: string
 }

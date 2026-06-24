@@ -77,6 +77,67 @@ export class CreateOrderPaymentDto {
   installmentInterestPercent?: number;
 }
 
+export class CreateDraftOrderDto {
+  @ApiProperty({ type: [CreateOrderItemDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items: CreateOrderItemDto[];
+}
+
+export class UpdateOrderDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerRegion?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerDistrict?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerArea?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  customerAddress?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  comment?: string;
+
+  @ApiPropertyOptional({ type: [CreateOrderItemDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items?: CreateOrderItemDto[];
+
+  @ApiPropertyOptional({ type: [CreateOrderPaymentDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderPaymentDto)
+  payments?: CreateOrderPaymentDto[];
+}
+
 export class CreateOrderDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -219,6 +280,9 @@ export class OrderResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiPropertyOptional()
+  createdByName?: string;
 
   @ApiProperty()
   createdAt: Date;

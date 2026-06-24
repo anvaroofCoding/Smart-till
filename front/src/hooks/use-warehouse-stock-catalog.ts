@@ -20,23 +20,18 @@ export function useWarehouseStockCatalog() {
   })
 
   useEffect(() => {
-    setPage(1)
-    setRows([])
-    setIsComplete(false)
-  }, [])
-
-  useEffect(() => {
-    if (!query.data) return
+    const data = query.data
+    if (!data) return
 
     setRows((prev) => {
-      if (page === 1) return query.data.data
+      if (page === 1) return data.data
 
       const existingIds = new Set(prev.map((row) => row.id))
-      const nextRows = query.data.data.filter((row) => !existingIds.has(row.id))
+      const nextRows = data.data.filter((row) => !existingIds.has(row.id))
       return [...prev, ...nextRows]
     })
 
-    if (query.data.meta.page >= query.data.meta.totalPages) {
+    if (data.meta.page >= data.meta.totalPages) {
       setIsComplete(true)
       return
     }
