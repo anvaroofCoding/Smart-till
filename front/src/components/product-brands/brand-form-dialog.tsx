@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -97,9 +96,6 @@ export function BrandFormDialog({
           <DialogTitle>
             {mode === 'create' ? 'Yangi brend' : 'Brendni tahrirlash'}
           </DialogTitle>
-          <DialogDescription>
-            Nom majburiy. Izoh va holat ixtiyoriy.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -114,7 +110,6 @@ export function BrandFormDialog({
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, name: e.target.value }))
                 }
-                placeholder="Masalan: Samsung"
                 autoFocus
               />
             </Field>
@@ -130,7 +125,6 @@ export function BrandFormDialog({
                     description: e.target.value,
                   }))
                 }
-                placeholder="Brend haqida qisqacha ma'lumot"
                 rows={3}
                 className={cn(
                   'border-input bg-transparent placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 flex min-h-20 w-full rounded-md border px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',

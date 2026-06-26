@@ -21,13 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -44,6 +42,8 @@ import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
+import { formatMoney, parseMoneyInput } from '@/lib/format-money'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
@@ -55,7 +55,7 @@ import {
 } from '@/store/api/warehouses.api'
 import type { WarehouseRecord } from '@/types/warehouse.types'
 
-const TABLE_HEADERS = ['№', 'Nomi', 'Manzil', 'Izoh', 'Holat', 'Amallar']
+const TABLE_HEADERS = ['№', 'Nomi', 'Manzil', 'Izoh', 'Kunlik plan', 'Holat', 'Amallar']
 
 function WarehouseActiveSwitch({
   warehouse,
@@ -212,6 +212,7 @@ export function WarehousesPage() {
       address: values.address.trim() || undefined,
       description: values.description.trim() || undefined,
       isActive: values.isActive,
+      dailySalesPlan: parseMoneyInput(values.dailySalesPlan),
     }
 
     try {
@@ -277,10 +278,6 @@ export function WarehousesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Omborlar ro&apos;yxati
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Onlayn kiritish uchun. Ombor nomi majburiy, manzil, izoh va holat
-            ixtiyoriy.
-          </p>
         </div>
         <Button onClick={openCreateDialog}>
           <AppIcon name="plus" />
@@ -288,14 +285,7 @@ export function WarehousesPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="warehouse" />
-            Omborlar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="relative w-full max-w-md shrink-0">
             <AppIcon
               name="search"
@@ -312,12 +302,12 @@ export function WarehousesPage() {
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
-                columns={6}
+                columns={7}
                 rows={6}
                 headers={TABLE_HEADERS}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
@@ -326,6 +316,8 @@ export function WarehousesPage() {
                         className={
                           header === '№'
                             ? 'w-12 text-center'
+                            : header === 'Kunlik plan'
+                              ? 'w-40 whitespace-nowrap'
                             : header === 'Amallar'
                               ? 'text-right'
                               : undefined
@@ -340,7 +332,7 @@ export function WarehousesPage() {
                   {warehouses.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-muted-foreground h-24 text-center"
                       >
                         Omborlar topilmadi
@@ -349,7 +341,7 @@ export function WarehousesPage() {
                   ) : (
                     warehouses.map((warehouse, index) => {
                       const page = warehousesQuery.data?.meta.page ?? 1
-                      const perPage = warehousesQuery.data?.meta.perPage ?? 20
+                      const perPage = warehousesQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
                       const rowNumber = (page - 1) * perPage + index + 1
 
                       return (
@@ -376,6 +368,11 @@ export function WarehousesPage() {
                               description={warehouse.description}
                               dialogSubtitle="Ombor izohi"
                             />
+                          </TableCell>
+                          <TableCell className="w-40 whitespace-nowrap tabular-nums">
+                            {warehouse.dailySalesPlan > 0
+                              ? formatMoney(warehouse.dailySalesPlan)
+                              : '—'}
                           </TableCell>
                           <TableCell>
                             <WarehouseActiveSwitch
@@ -422,8 +419,7 @@ export function WarehousesPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
 
       <WarehouseFormDialog
         open={dialogOpen}

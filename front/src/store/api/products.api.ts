@@ -1,6 +1,8 @@
 import type { ApiResponse } from '@/types/api.types'
 import type {
+  CreateProductBarcodeRequest,
   CreateProductRequest,
+  ProductBarcodeRecord,
   ProductRecord,
   ProductsListResponse,
   UpdateProductRequest,
@@ -111,6 +113,59 @@ export const productsApi = baseApi.injectEndpoints({
         ...catalogUsageInvalidationTags,
       ],
     }),
+
+    getProductBarcodes: builder.query<ProductBarcodeRecord[], string>({
+      query: (productId) => ({
+        url: `/products/${productId}/barcodes`,
+        method: 'GET',
+      }),
+      transformResponse: (response: ApiResponse<ProductBarcodeRecord[]>) =>
+        response.data,
+      providesTags: (_result, _error, productId) => [
+        { type: API_TAGS.Product, id: `${productId}-barcodes` },
+      ],
+    }),
+
+    addProductBarcode: builder.mutation<
+      ProductBarcodeRecord,
+      { productId: string; body: CreateProductBarcodeRequest; stockId?: string }
+    >({
+      query: ({ productId, body }) => ({
+        url: `/products/${productId}/barcodes`,
+        method: 'POST',
+        data: body,
+      }),
+      transformResponse: (response: ApiResponse<ProductBarcodeRecord>) =>
+        response.data,
+      invalidatesTags: (_result, _error, { productId, stockId }) => [
+        { type: API_TAGS.Product, id: productId },
+        { type: API_TAGS.Product, id: `${productId}-barcodes` },
+        { type: API_TAGS.Product, id: 'LIST' },
+        { type: API_TAGS.Inventory, id: 'LIST' },
+        ...(stockId ? [{ type: API_TAGS.Inventory, id: stockId }] : []),
+        { type: API_TAGS.WarehouseTransfer, id: 'LIST' },
+      ],
+    }),
+
+    removeProductBarcode: builder.mutation<
+      { success: true },
+      { productId: string; barcodeId: string; stockId?: string }
+    >({
+      query: ({ productId, barcodeId }) => ({
+        url: `/products/${productId}/barcodes/${barcodeId}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: ApiResponse<{ success: true }>) =>
+        response.data,
+      invalidatesTags: (_result, _error, { productId, stockId }) => [
+        { type: API_TAGS.Product, id: productId },
+        { type: API_TAGS.Product, id: `${productId}-barcodes` },
+        { type: API_TAGS.Product, id: 'LIST' },
+        { type: API_TAGS.Inventory, id: 'LIST' },
+        ...(stockId ? [{ type: API_TAGS.Inventory, id: stockId }] : []),
+        { type: API_TAGS.WarehouseTransfer, id: 'LIST' },
+      ],
+    }),
   }),
 })
 
@@ -120,4 +175,7 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useSetProductStatusMutation,
+  useGetProductBarcodesQuery,
+  useAddProductBarcodeMutation,
+  useRemoveProductBarcodeMutation,
 } = productsApi

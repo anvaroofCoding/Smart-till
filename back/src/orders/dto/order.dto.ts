@@ -3,6 +3,8 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
+  IsIn,
   IsMongoId,
   IsNumber,
   IsOptional,
@@ -138,6 +140,32 @@ export class UpdateOrderDto {
   payments?: CreateOrderPaymentDto[];
 }
 
+export class FulfillOrderItemDto {
+  @ApiProperty()
+  @IsNumber()
+  @Min(0)
+  index: number;
+
+  @ApiProperty()
+  @IsBoolean()
+  fulfilled: boolean;
+}
+
+export class FulfillOrderDto {
+  @ApiProperty({ type: [FulfillOrderItemDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => FulfillOrderItemDto)
+  items: FulfillOrderItemDto[];
+}
+
+export class OrderReceiptDto {
+  @ApiProperty({ enum: ['print', 'skip'] })
+  @IsIn(['print', 'skip'])
+  action: 'print' | 'skip';
+}
+
 export class CreateOrderDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -210,6 +238,9 @@ export class OrderItemResponseDto {
 
   @ApiProperty()
   lineTotal: number;
+
+  @ApiProperty()
+  fulfilled: boolean;
 }
 
 export class OrderPaymentResponseDto {
@@ -280,6 +311,12 @@ export class OrderResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiPropertyOptional()
+  receiptPrintedAt?: Date;
+
+  @ApiProperty()
+  receiptSkipped: boolean;
 
   @ApiPropertyOptional()
   createdByName?: string;

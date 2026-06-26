@@ -5,6 +5,7 @@ export const SOCKET_EVENTS = {
   ORDER_CREATED: 'order:created',
   ORDER_UPDATED: 'order:updated',
   WAREHOUSE_ALERT: 'warehouse:alert',
+  NOTIFICATION_CREATED: 'notification:created',
 } as const
 
 export const CLIENT_EVENTS = {
@@ -43,6 +44,17 @@ export interface WarehouseAlertPayload {
   timestamp: string
 }
 
+import type { NotificationRecord } from '@/types/notification.types'
+
+export interface NotificationCreatedPayload {
+  timestamp: string
+  userIds: string[]
+  items?: Array<{
+    userId: string
+    notification: NotificationRecord
+  }>
+}
+
 export interface ServerToClientEvents {
   [SOCKET_EVENTS.INVENTORY_UPDATED]: (payload: InventoryUpdatedPayload) => void
   [SOCKET_EVENTS.INVENTORY_SCANNED]: (payload: InventoryScannedPayload) => void
@@ -50,6 +62,7 @@ export interface ServerToClientEvents {
   [SOCKET_EVENTS.ORDER_CREATED]: (payload: { orderId: string }) => void
   [SOCKET_EVENTS.ORDER_UPDATED]: (payload: { orderId: string; status: string }) => void
   [SOCKET_EVENTS.WAREHOUSE_ALERT]: (payload: WarehouseAlertPayload) => void
+  [SOCKET_EVENTS.NOTIFICATION_CREATED]: (payload: NotificationCreatedPayload) => void
 }
 
 export interface ClientToServerEvents {

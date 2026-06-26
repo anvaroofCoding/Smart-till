@@ -2,6 +2,7 @@ export interface WarehouseStockTableFilters {
   id: string
   categoryId: string
   productId: string
+  barcode: string
   unitPrice: string
   sellingPrice: string
   totalValue: string
@@ -13,6 +14,7 @@ export const emptyWarehouseStockTableFilters: WarehouseStockTableFilters = {
   id: '',
   categoryId: '',
   productId: '',
+  barcode: '',
   unitPrice: '',
   sellingPrice: '',
   totalValue: '',
@@ -35,6 +37,7 @@ export function warehouseStockFiltersToQueryParams(
     id: filters.id.trim() || undefined,
     categoryId: filters.categoryId || undefined,
     productId: filters.productId || undefined,
+    barcode: filters.barcode.trim() || undefined,
     warehouseId: filters.warehouseId || undefined,
     unitPrice: parseOptionalNumber(filters.unitPrice),
     sellingPrice: parseOptionalNumber(filters.sellingPrice),
@@ -48,6 +51,7 @@ export const WAREHOUSE_STOCK_TABLE_HEADERS = [
   'ID',
   'Maxsulot kategoriyasi',
   'Maxsulot nomi',
+  'Barkod',
   'Oxirgi kirim narxi',
   'Sotiladigan narx',
   'Tovar qiymati',

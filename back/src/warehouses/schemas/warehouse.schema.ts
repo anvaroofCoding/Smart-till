@@ -17,6 +17,9 @@ export class Warehouse {
   @Prop({ default: true })
   isActive: boolean;
 
+  @Prop({ default: 0, min: 0 })
+  dailySalesPlan: number;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -42,6 +42,24 @@ export function parseCreatedAtFilter(
   return { $gte: start, $lt: end };
 }
 
+export function parseDateKeyFilter(value?: string): string | RegExp | null {
+  if (!value?.trim()) return null;
+
+  const trimmed = value.trim();
+  const dotted = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
+  if (dotted) {
+    return `${dotted[3]}-${dotted[2]}-${dotted[1]}`;
+  }
+
+  const dashed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (dashed) {
+    return trimmed;
+  }
+
+  const normalized = trimmed.replace(/\./g, '-');
+  return new RegExp(escapeRegex(normalized), 'i');
+}
+
 export function buildIdFilter(id?: string): Record<string, unknown> | null {
   if (!id?.trim()) return null;
 

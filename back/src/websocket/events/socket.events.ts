@@ -5,6 +5,7 @@ export const SOCKET_EVENTS = {
   ORDER_CREATED: 'order:created',
   ORDER_UPDATED: 'order:updated',
   WAREHOUSE_ALERT: 'warehouse:alert',
+  NOTIFICATION_CREATED: 'notification:created',
 } as const;
 
 export const CLIENT_EVENTS = {

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import {
   ProductBrand,
   ProductBrandDocument,
@@ -16,6 +17,7 @@ import {
 } from '../product-categories/schemas/product-category.schema';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
+import { ProductBarcodesService } from './product-barcodes.service';
 import { toProductResponse } from './products.mapper';
 import { Product, ProductDocument } from './schemas/product.schema';
 
@@ -28,6 +30,7 @@ export class ProductsService {
     private readonly categoryModel: Model<ProductCategoryDocument>,
     @InjectModel(ProductBrand.name)
     private readonly brandModel: Model<ProductBrandDocument>,
+    private readonly productBarcodesService: ProductBarcodesService,
   ) {}
 
   async create(dto: CreateProductDto): Promise<ProductDocument> {
@@ -54,12 +57,16 @@ export class ProductsService {
       isActive: dto.isActive ?? true,
     });
 
+    await this.productBarcodesService.ensurePrimaryBarcode(
+      product._id.toString(),
+    );
+
     return this.findById(product._id.toString());
   }
 
   async findAll(query: ProductQueryDto) {
     const page = query.page ?? 1;
-    const perPage = query.perPage ?? 20;
+    const perPage = query.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter = await this.buildListFilter(query);
@@ -145,18 +152,21 @@ export class ProductsService {
       const search = query.search.trim();
       const regex = new RegExp(escapeRegex(search), 'i');
 
-      const [categoryIds, brandIds] = await Promise.all([
+      const [categoryIds, brandIds, barcodeProductIds] = await Promise.all([
         this.categoryModel.find({ name: regex }).distinct('_id').exec(),
         this.brandModel.find({ name: regex }).distinct('_id').exec(),
+        this.productBarcodesService.findProductIdsByBarcodeSearch(search),
       ]);
 
       and.push({
         $or: [
           { name: regex },
           { code: regex },
+          { barcode: regex },
           { description: regex },
           { categoryId: { $in: categoryIds } },
           { brandId: { $in: brandIds } },
+          { _id: { $in: barcodeProductIds } },
         ],
       });
     }
@@ -233,6 +243,14 @@ export class ProductsService {
 
     await product.save();
     return this.findById(id);
+  }
+
+  async ensureBarcode(productId: string): Promise<string> {
+    return this.productBarcodesService.ensurePrimaryBarcode(productId);
+  }
+
+  async ensureBarcodes(productIds: string[]): Promise<Map<string, string>> {
+    return this.productBarcodesService.ensureBarcodes(productIds);
   }
 
   async setActive(id: string, isActive: boolean): Promise<ProductDocument> {

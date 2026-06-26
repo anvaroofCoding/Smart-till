@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { UpdateProfileDto } from './dto/profile.dto';
 import { LoginResponseDto } from './dto/auth-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -34,5 +35,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Joriy foydalanuvchi ma\'lumotlari' })
   me(@CurrentUser() user: JwtPayload) {
     return this.authService.getProfile(user.sub);
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Joriy foydalanuvchi profilini yangilash' })
+  updateProfile(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user.sub, dto);
   }
 }

@@ -1,4 +1,7 @@
-import { formatUzbekPhoneLocal } from '@/lib/phone'
+import {
+  formatUzbekPhoneMasked,
+  parseUzbekPhoneLocal,
+} from '@/lib/phone'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
@@ -15,24 +18,20 @@ export function UzbekPhoneInput({
   value,
   onChange,
   className,
-  placeholder = '90 123 45 67',
+  placeholder = '+998 90 123 45 67',
   ...props
 }: UzbekPhoneInputProps) {
   return (
-    <div className={cn('relative', className)}>
-      <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
-        +998
-      </span>
-      <Input
-        id={id}
-        type="tel"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(formatUzbekPhoneLocal(e.target.value))}
-        placeholder={placeholder}
-        className="pl-14"
-        {...props}
-      />
-    </div>
+    <Input
+      id={id}
+      type="tel"
+      inputMode="numeric"
+      autoComplete="tel"
+      value={formatUzbekPhoneMasked(value)}
+      onChange={(e) => onChange(parseUzbekPhoneLocal(e.target.value))}
+      placeholder={placeholder}
+      className={cn(className)}
+      {...props}
+    />
   )
 }

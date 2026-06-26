@@ -5,6 +5,7 @@ import type {
   LoginRequest,
   LoginResponse,
   MeResponse,
+  UpdateProfileRequest,
 } from '@/types/api.types'
 
 export const authApi = baseApi.injectEndpoints({
@@ -28,6 +29,16 @@ export const authApi = baseApi.injectEndpoints({
       providesTags: [{ type: API_TAGS.Auth, id: 'ME' }],
     }),
 
+    updateProfile: builder.mutation<MeResponse, UpdateProfileRequest>({
+      query: (body) => ({
+        url: '/auth/me',
+        method: 'PATCH',
+        data: body,
+      }),
+      transformResponse: (response: ApiResponse<MeResponse>) => response.data,
+      invalidatesTags: [{ type: API_TAGS.Auth, id: 'ME' }],
+    }),
+
     healthCheck: builder.query<{ status: string }, void>({
       query: () => ({
         url: '/health',
@@ -43,5 +54,6 @@ export const {
   useLoginMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useUpdateProfileMutation,
   useHealthCheckQuery,
 } = authApi

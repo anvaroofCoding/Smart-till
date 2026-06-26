@@ -41,6 +41,7 @@ const sidebarMenuSource: SidebarMenuItem[] = [
       { title: 'Buyurtmani chiqim qilish', url: '/kassir/buyurtmani-chiqim-qilish' },
       { title: 'Kunlik balanslar', url: '/kassir/kunlik-balanslar' },
       { title: 'Xarajatlar', url: '/kassir/xarajatlar' },
+      { title: 'Xarajatlarni ro\'yxati', url: '/kassir/xarajat-turlari' },
       { title: 'Kirimlar', url: '/kassir/kirimlar' },
       { title: 'Hisobotlar', url: '/kassir/hisobotlar' },
     ],
@@ -73,7 +74,6 @@ const sidebarMenuSource: SidebarMenuItem[] = [
     items: [
       { title: 'Transferlar', url: '/transfer/transferlar' },
       { title: 'Transferni qabul qilish', url: '/transfer/qabul-qilish' },
-      { title: 'Transferni jo\'natish', url: '/transfer/jo-natish' },
     ],
   },
   {
@@ -155,6 +155,10 @@ export function flattenSidebarRoutes() {
 }
 
 export function findRouteMeta(pathname: string) {
+  if (pathname === '/profil') {
+    return { section: 'Hisob', title: 'Profil' }
+  }
+
   for (const section of sidebarMenu) {
     for (const item of section.items) {
       if (item.url === pathname) {

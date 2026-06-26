@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import {
   buildIdFilter,
   escapeRegex,
@@ -42,6 +43,8 @@ import {
   StockReceipt,
   StockReceiptDocument,
 } from './schemas/stock-receipt.schema';
+import { ProductsService } from '../products/products.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class StockReceiptsService {
@@ -58,6 +61,8 @@ export class StockReceiptsService {
     private readonly warehouseModel: Model<WarehouseDocument>,
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
+    private readonly productsService: ProductsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -82,7 +87,7 @@ export class StockReceiptsService {
 
   async findAll(pagination: StockReceiptsQueryDto, scope?: UserWarehouseScope) {
     const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+    const perPage = pagination.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     if (scope && !scope.allWarehouses && scope.warehouseIds.length === 0) {
@@ -261,6 +266,7 @@ export class StockReceiptsService {
     receiptId: string,
     dto: AcceptStockReceiptDto,
     scope?: UserWarehouseScope,
+    acceptedByUserId?: string,
   ) {
     const receipt = await this.findInProgressReceipt(receiptId);
     this.ensureWarehouseAllowed(scope, normalizeWarehouseId(receipt.warehouseId));
@@ -316,6 +322,8 @@ export class StockReceiptsService {
       item.receivedQuantity = receivedQuantity;
       receivedCount += 1;
 
+      await this.productsService.ensureBarcode(item.productId.toString());
+
       const updatedStock = await this.stockModel.findOneAndUpdate(
         {
           warehouseId,
@@ -358,6 +366,13 @@ export class StockReceiptsService {
     receipt.markModified('items');
     receipt.status = 'completed';
     await receipt.save();
+
+    await this.notificationsService.notifyStockReceiptAccept(
+      receipt,
+      dto,
+      acceptedByUserId,
+    );
+
     return this.findById(receiptId);
   }
 

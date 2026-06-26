@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { UpdateProfileDto } from './dto/profile.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserDocument } from '../users/schemas/user.schema';
 
@@ -55,7 +56,6 @@ export class AuthService {
   }
 
   private async buildAuthResponse(user: UserDocument) {
-    const profile = await this.usersService.toResponse(user);
     const payload: JwtPayload = {
       sub: user._id.toString(),
       email: user.email,
@@ -70,22 +70,7 @@ export class AuthService {
         tokenType: 'Bearer',
         expiresIn: this.config.get<string>('jwt.expiresIn') ?? '3650d',
       },
-      user: {
-        id: profile.id,
-        email: profile.email,
-        login: profile.login,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
-        role: user.role,
-        position: profile.position,
-        phone: profile.phone ?? '',
-        birthDate: profile.birthDate,
-        allowedPages: profile.allowedPages ?? [],
-        allWarehouses: profile.allWarehouses,
-        warehouseIds: profile.warehouseIds,
-        warehouses: profile.warehouses,
-      },
+      user: await this.buildAuthUser(user),
     };
   }
 
@@ -96,25 +81,32 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
+    return { user: await this.buildAuthUser(user) };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.usersService.updateProfile(userId, dto);
+    return { user: await this.buildAuthUser(user) };
+  }
+
+  private async buildAuthUser(user: UserDocument) {
     const profile = await this.usersService.toResponse(user);
 
     return {
-      user: {
-        id: profile.id,
-        email: profile.email,
-        login: profile.login,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
-        role: user.role,
-        position: profile.position,
-        phone: profile.phone ?? '',
-        birthDate: profile.birthDate,
-        allowedPages: profile.allowedPages ?? [],
-        allWarehouses: profile.allWarehouses,
-        warehouseIds: profile.warehouseIds,
-        warehouses: profile.warehouses,
-      },
+      id: profile.id,
+      email: profile.email,
+      login: profile.login,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      fullName: `${profile.firstName} ${profile.lastName}`.trim(),
+      role: user.role,
+      position: profile.position,
+      phone: profile.phone ?? '',
+      birthDate: profile.birthDate,
+      allowedPages: profile.allowedPages ?? [],
+      allWarehouses: profile.allWarehouses,
+      warehouseIds: profile.warehouseIds,
+      warehouses: profile.warehouses,
     };
   }
 }

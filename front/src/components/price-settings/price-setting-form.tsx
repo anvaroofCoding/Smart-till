@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card'
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -451,11 +450,6 @@ export function PriceSettingForm({
             {showPercentage && (
               <Field>
                 <FieldLabel>Foyda foizi (%)</FieldLabel>
-                <FieldDescription>
-                  Sozlamada ko&apos;rsatilmagan tavarlar avtomatik{' '}
-                  {DEFAULT_MARKUP_PERCENT}% foyda bilan sotiladi. Bu yerda
-                  standartdan yuqori yoki past foiz belgilang.
-                </FieldDescription>
                 <Input
                   type="number"
                   min={0}

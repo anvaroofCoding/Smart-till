@@ -3,14 +3,19 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import {
   buildIdFilter,
   escapeRegex,
   parseCreatedAtFilter,
 } from '../common/utils/list-filter.utils';
+import {
+  inferPaymentChannel,
+} from '../daily-balances/constants/payment-channel';
 import {
   CreatePaymentTypeDto,
   InstallmentPlanDto,
@@ -22,13 +27,20 @@ import {
   PaymentType,
   PaymentTypeDocument,
 } from './schemas/payment-type.schema';
+import {
+  SYSTEM_PAYMENT_TYPES,
+} from './constants/system-payment-types';
 
 @Injectable()
-export class PaymentTypesService {
+export class PaymentTypesService implements OnModuleInit {
   constructor(
     @InjectModel(PaymentType.name)
     private readonly paymentTypeModel: Model<PaymentTypeDocument>,
   ) {}
+
+  async onModuleInit() {
+    await this.seedSystemPaymentTypes();
+  }
 
   async create(dto: CreatePaymentTypeDto): Promise<PaymentTypeDocument> {
     const name = dto.name.trim();
@@ -42,6 +54,7 @@ export class PaymentTypesService {
       name,
       logo: dto.logo?.trim() ?? '',
       installmentPlans,
+      channel: dto.channel ?? inferPaymentChannel(name),
       isActive: dto.isActive ?? true,
     });
 
@@ -50,7 +63,7 @@ export class PaymentTypesService {
 
   async findAll(query: PaymentTypeQueryDto) {
     const page = query.page ?? 1;
-    const perPage = query.perPage ?? 20;
+    const perPage = query.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter = this.buildListFilter(query);
@@ -89,8 +102,30 @@ export class PaymentTypesService {
     dto: UpdatePaymentTypeDto,
   ): Promise<PaymentTypeDocument> {
     const paymentType = await this.findById(id);
+    const isSystem = this.isSystemPaymentType(paymentType);
 
-    if (dto.name !== undefined) {
+    if (isSystem) {
+      if (dto.name !== undefined && dto.name.trim() !== paymentType.name) {
+        throw new BadRequestException(
+          'Tizim to\'lov turi nomini o\'zgartirib bo\'lmaydi',
+        );
+      }
+      if (
+        dto.channel !== undefined &&
+        dto.channel !== paymentType.channel
+      ) {
+        throw new BadRequestException(
+          'Tizim to\'lov turi kanalini o\'zgartirib bo\'lmaydi',
+        );
+      }
+      if (dto.isActive === false) {
+        throw new BadRequestException(
+          'Tizim to\'lov turini nofaol qilib bo\'lmaydi',
+        );
+      }
+    }
+
+    if (dto.name !== undefined && !isSystem) {
       const name = dto.name.trim();
       if (!name) {
         throw new ConflictException(
@@ -112,8 +147,16 @@ export class PaymentTypesService {
       );
     }
 
-    if (dto.isActive !== undefined) {
+    if (dto.isActive !== undefined && !isSystem) {
       paymentType.isActive = dto.isActive;
+    }
+
+    if (!isSystem) {
+      if (dto.channel !== undefined) {
+        paymentType.channel = dto.channel;
+      } else if (dto.name !== undefined) {
+        paymentType.channel = inferPaymentChannel(paymentType.name);
+      }
     }
 
     await paymentType.save();
@@ -125,14 +168,97 @@ export class PaymentTypesService {
     isActive: boolean,
   ): Promise<PaymentTypeDocument> {
     const paymentType = await this.findById(id);
+    if (this.isSystemPaymentType(paymentType) && !isActive) {
+      throw new BadRequestException(
+        'Tizim to\'lov turini nofaol qilib bo\'lmaydi',
+      );
+    }
     paymentType.isActive = isActive;
     await paymentType.save();
     return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {
-    await this.findById(id);
+    const paymentType = await this.findById(id);
+    if (this.isSystemPaymentType(paymentType)) {
+      throw new BadRequestException(
+        'Tizim to\'lov turini o\'chirib bo\'lmaydi',
+      );
+    }
     await this.paymentTypeModel.findByIdAndDelete(id).exec();
+  }
+
+  private isSystemPaymentType(paymentType: PaymentTypeDocument): boolean {
+    return !!paymentType.systemKey;
+  }
+
+  private async seedSystemPaymentTypes() {
+    for (const definition of SYSTEM_PAYMENT_TYPES) {
+      let paymentType = await this.paymentTypeModel
+        .findOne({ systemKey: definition.systemKey })
+        .exec();
+
+      if (!paymentType) {
+        paymentType = await this.paymentTypeModel
+          .findOne({
+            channel: definition.channel,
+            $or: [
+              { systemKey: { $exists: false } },
+              { systemKey: null },
+            ],
+          })
+          .sort({ createdAt: 1 })
+          .exec();
+      }
+
+      if (!paymentType) {
+        paymentType = await this.paymentTypeModel
+          .findOne({
+            name: new RegExp(`^${escapeRegex(definition.name)}$`, 'i'),
+          })
+          .exec();
+      }
+
+      if (paymentType) {
+        paymentType.systemKey = definition.systemKey;
+        paymentType.name = definition.name;
+        paymentType.channel = definition.channel;
+        paymentType.isActive = true;
+        await paymentType.save();
+        continue;
+      }
+
+      try {
+        await this.paymentTypeModel.create({
+          name: definition.name,
+          channel: definition.channel,
+          systemKey: definition.systemKey,
+          isActive: true,
+          logo: '',
+          installmentPlans: [],
+        });
+      } catch (error) {
+        const code = (error as { code?: number }).code;
+        if (code !== 11_000) {
+          throw error;
+        }
+
+        const existing = await this.paymentTypeModel
+          .findOne({
+            name: new RegExp(`^${escapeRegex(definition.name)}$`, 'i'),
+          })
+          .exec();
+        if (!existing) {
+          throw error;
+        }
+
+        existing.systemKey = definition.systemKey;
+        existing.name = definition.name;
+        existing.channel = definition.channel;
+        existing.isActive = true;
+        await existing.save();
+      }
+    }
   }
 
   private normalizeInstallmentPlans(

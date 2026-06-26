@@ -39,6 +39,11 @@ export class WarehouseStockQueryDto extends PaginationDto {
   @IsString()
   productName?: string;
 
+  @ApiPropertyOptional({ description: 'Barkod' })
+  @IsOptional()
+  @IsString()
+  barcode?: string;
+
   @ApiPropertyOptional({ description: 'Ombor nomi' })
   @IsOptional()
   @IsString()

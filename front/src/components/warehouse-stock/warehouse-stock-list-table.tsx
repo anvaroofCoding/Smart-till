@@ -4,6 +4,10 @@ import {
   QueryRefreshIndicator,
 } from '@/components/loading'
 import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatMoney } from '@/lib/format-money'
+import { ProductBarcode } from '@/components/shared/product-barcode'
 import type { PaginatedMeta } from '@/types/api.types'
 import type { ProductCategoryRecord } from '@/types/product-category.types'
 import type { ProductRecord } from '@/types/product.types'
@@ -57,7 +62,7 @@ export function WarehouseStockListTable({
   const columnCount = WAREHOUSE_STOCK_TABLE_HEADERS.length
 
   return (
-    <>
+    <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
       <div className="min-h-0 flex-1 overflow-auto">
         {showTableSkeleton ? (
           <DataTableSkeleton
@@ -66,9 +71,9 @@ export function WarehouseStockListTable({
             headers={[...WAREHOUSE_STOCK_TABLE_HEADERS]}
           />
         ) : (
-          <Table>
+          <Table className={BORDERLESS_TABLE_CLASS}>
             <TableHeader>
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 {WAREHOUSE_STOCK_TABLE_HEADERS.map((header) => (
                   <TableHead
                     key={header}
@@ -126,6 +131,13 @@ export function WarehouseStockListTable({
                       <TableCell className="font-medium">
                         {item.product.name}
                       </TableCell>
+                      <TableCell className="min-w-[140px]">
+                        <ProductBarcode
+                          value={item.product.barcode}
+                          height={32}
+                          className="max-w-[140px]"
+                        />
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatMoney(item.unitPrice)}
                       </TableCell>
@@ -165,6 +177,6 @@ export function WarehouseStockListTable({
       )}
 
       <QueryRefreshIndicator visible={showTableRefreshing} />
-    </>
+    </div>
   )
 }

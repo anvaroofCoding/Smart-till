@@ -3,10 +3,16 @@ import { HydratedDocument, Types } from 'mongoose';
 import { PaymentType } from '../../payment-types/schemas/payment-type.schema';
 import { Product } from '../../products/schemas/product.schema';
 import { User } from '../../users/schemas/user.schema';
+import { Warehouse } from '../../warehouses/schemas/warehouse.schema';
 
 export type OrderDocument = HydratedDocument<Order>;
 
-export const ORDER_STATUSES = ['draft', 'confirmed', 'cancelled'] as const;
+export const ORDER_STATUSES = [
+  'draft',
+  'pending_fulfillment',
+  'confirmed',
+  'cancelled',
+] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 @Schema({ _id: false })
@@ -31,6 +37,9 @@ export class OrderItem {
 
   @Prop({ required: true, min: 0 })
   lineTotal: number;
+
+  @Prop({ default: false })
+  fulfilled: boolean;
 }
 
 export const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
@@ -105,8 +114,17 @@ export class Order {
   @Prop({ required: true, enum: ORDER_STATUSES, default: 'draft' })
   status: OrderStatus;
 
+  @Prop()
+  receiptPrintedAt?: Date;
+
+  @Prop({ default: false })
+  receiptSkipped: boolean;
+
   @Prop({ type: Types.ObjectId, ref: User.name })
   createdById?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: Warehouse.name })
+  warehouseId?: Types.ObjectId;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -116,3 +134,4 @@ export const OrderSchema = SchemaFactory.createForClass(Order);
 
 OrderSchema.index({ customerPhone: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ warehouseId: 1, createdAt: -1 });

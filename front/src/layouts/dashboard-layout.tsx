@@ -1,5 +1,5 @@
 import { AppSidebar } from '@/components/app-sidebar'
-import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,16 +21,13 @@ import {
   PAGE_EDGE_PADDING_X_CLASS,
 } from '@/config/layout'
 import { pageTitle } from '@/config/seo'
-import { useNotificationsEnabled } from '@/features/appearance/appearance-context'
 import { usePageMeta } from '@/hooks/use-page-meta'
-import { Bell } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 export function DashboardLayout() {
   const location = useLocation()
   const meta = findRouteMeta(location.pathname)
-  const notificationsEnabled = useNotificationsEnabled()
 
   usePageMeta({
     title: meta
@@ -71,19 +68,7 @@ export function DashboardLayout() {
           </div>
 
           <div className={PAGE_EDGE_PADDING_X_CLASS}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-9"
-              aria-label={
-                notificationsEnabled
-                  ? 'Bildirishnomalar yoqilgan'
-                  : 'Bildirishnomalar o\'chirilgan'
-              }
-              data-enabled={notificationsEnabled || undefined}
-            >
-              <Bell className="size-5" />
-            </Button>
+            <NotificationBell />
           </div>
         </header>
         <div className={cn('flex flex-1 flex-col gap-6', PAGE_EDGE_PADDING_CLASS)}>

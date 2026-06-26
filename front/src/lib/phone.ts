@@ -10,6 +10,31 @@ export function parseUzbekPhoneLocal(phone: string): string {
   return formatUzbekPhoneLocal(digits)
 }
 
+/** 90 001 01 01 */
+export function formatUzbekPhoneLocalDisplay(local: string): string {
+  const digits = formatUzbekPhoneLocal(local)
+
+  if (digits.length <= 2) {
+    return digits
+  }
+
+  if (digits.length <= 5) {
+    return `${digits.slice(0, 2)} ${digits.slice(2)}`
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`
+  }
+
+  return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)}`
+}
+
+/** +998 90 001 01 01 */
+export function formatUzbekPhoneMasked(local: string): string {
+  const display = formatUzbekPhoneLocalDisplay(local)
+  return display ? `+998 ${display}` : '+998 '
+}
+
 export function buildUzbekPhone(local: string): string {
   const digits = formatUzbekPhoneLocal(local)
   return digits ? `+998${digits}` : ''

@@ -15,15 +15,11 @@ import {
   DataTableSkeleton,
   QueryRefreshIndicator,
 } from '@/components/loading'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -40,7 +36,6 @@ import { useListPagination } from '@/hooks/use-list-pagination'
 import { useQueryLoading } from '@/hooks/use-query-loading'
 import { useUserWarehouseAccess } from '@/hooks/use-user-warehouse-access'
 import { pageTitle } from '@/config/seo'
-import { DEFAULT_MARKUP_PERCENT } from '@/config/pricing'
 import { formatDateDisplay } from '@/lib/date-format'
 import { formatMoney } from '@/lib/format-money'
 import { getApiErrorMessage } from '@/lib/api-error'
@@ -200,19 +195,7 @@ export function PriceSettingsPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="settings" />
-            Narx sozlamalari ro&apos;yxati
-            <Badge variant="secondary">{paginationMeta.total}</Badge>
-          </CardTitle>
-          <CardDescription>
-            Sozlamada ko&apos;rsatilmagan tavarlar avtomatik {DEFAULT_MARKUP_PERCENT}%
-            foyda bilan sotiladi. Bu yerda foizni oshirish yoki kamaytirish mumkin.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
@@ -221,7 +204,7 @@ export function PriceSettingsPage() {
                 headers={[...PRICE_SETTING_TABLE_HEADERS]}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {PRICE_SETTING_TABLE_HEADERS.map((header) => (
@@ -339,8 +322,7 @@ export function PriceSettingsPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

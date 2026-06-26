@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
+import { formatMoneyInput, parseMoneyInput } from '@/lib/format-money'
 import type { WarehouseRecord } from '@/types/warehouse.types'
 
 export interface WarehouseFormValues {
@@ -27,6 +28,7 @@ export interface WarehouseFormValues {
   address: string
   description: string
   isActive: boolean
+  dailySalesPlan: string
 }
 
 const emptyForm: WarehouseFormValues = {
@@ -34,6 +36,7 @@ const emptyForm: WarehouseFormValues = {
   address: '',
   description: '',
   isActive: true,
+  dailySalesPlan: '',
 }
 
 function warehouseToForm(warehouse: WarehouseRecord): WarehouseFormValues {
@@ -42,6 +45,10 @@ function warehouseToForm(warehouse: WarehouseRecord): WarehouseFormValues {
     address: warehouse.address,
     description: warehouse.description,
     isActive: warehouse.isActive,
+    dailySalesPlan:
+      warehouse.dailySalesPlan > 0
+        ? formatMoneyInput(String(warehouse.dailySalesPlan))
+        : '',
   }
 }
 
@@ -153,6 +160,26 @@ export function WarehouseFormDialog({
                   'border-input bg-transparent placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 flex min-h-20 w-full rounded-md border px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
                 )}
               />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="warehouse-daily-plan">Kunlik plan</FieldLabel>
+              <Input
+                id="warehouse-daily-plan"
+                inputMode="decimal"
+                value={values.dailySalesPlan}
+                onChange={(e) =>
+                  setValues((prev) => ({
+                    ...prev,
+                    dailySalesPlan: formatMoneyInput(e.target.value),
+                  }))
+                }
+                placeholder="Masalan: 50 000 000"
+              />
+              <p className="text-muted-foreground text-xs">
+                Do&apos;kon kuniga qancha savdo qilishi kerakligini so&apos;mda
+                kiriting
+              </p>
             </Field>
 
             <Field>

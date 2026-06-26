@@ -27,6 +27,27 @@ export interface OrderCustomerInfo {
   comment: string
 }
 
+export interface FulfillOrderItemRequest {
+  index: number
+  fulfilled: boolean
+}
+
+export interface FulfillOrderRequest {
+  items: FulfillOrderItemRequest[]
+}
+
+export type OrderReceiptAction = 'print' | 'skip'
+
+export interface OrderReceiptRequest {
+  action: OrderReceiptAction
+}
+
+export type OrderStatus =
+  | 'draft'
+  | 'pending_fulfillment'
+  | 'confirmed'
+  | 'cancelled'
+
 export interface CreateOrderItemRequest {
   productId: string
   productName: string
@@ -90,6 +111,7 @@ export interface OrderRecord {
     quantity: number
     discount: number
     lineTotal: number
+    fulfilled: boolean
   }>
   payments: Array<{
     paymentTypeId: string
@@ -104,7 +126,9 @@ export interface OrderRecord {
   total: number
   paidTotal: number
   remainingTotal: number
-  status: string
+  status: OrderStatus
+  receiptPrintedAt?: string
+  receiptSkipped: boolean
   createdByName?: string
   createdAt: string
   updatedAt: string

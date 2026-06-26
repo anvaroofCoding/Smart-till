@@ -19,6 +19,12 @@ import { WarehouseStockModule } from './warehouse-stock/warehouse-stock.module';
 import { PaymentTypesModule } from './payment-types/payment-types.module';
 import { PriceSettingsModule } from './price-settings/price-settings.module';
 import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DailyBalancesModule } from './daily-balances/daily-balances.module';
+import { ExpenseCategoriesModule } from './expense-categories/expense-categories.module';
+import { ReportsModule } from './reports/reports.module';
+import { SellerCartsModule } from './seller-carts/seller-carts.module';
+import { WarehouseTransfersModule } from './warehouse-transfers/warehouse-transfers.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -43,6 +49,12 @@ import { RolesGuard } from './common/guards/roles.guard';
     PaymentTypesModule,
     PriceSettingsModule,
     OrdersModule,
+    NotificationsModule,
+    DailyBalancesModule,
+    ExpenseCategoriesModule,
+    ReportsModule,
+    SellerCartsModule,
+    WarehouseTransfersModule,
     HealthModule,
     WebsocketModule,
   ],

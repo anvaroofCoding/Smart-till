@@ -16,13 +16,11 @@ import {
   QueryRefreshIndicator,
 } from '@/components/loading'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -40,6 +38,7 @@ import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { formatDateDisplay } from '@/lib/date-format'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { useGetProductBrandsQuery } from '@/store/api/product-brands.api'
@@ -171,10 +170,6 @@ export function ProductsPage() {
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Maxsulotlar</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Jadval ustunlari ostidagi filterlar orqali qidirish. Barcha filterlar
-            bir vaqtda qo&apos;llanadi.
-          </p>
         </div>
         <Button asChild>
           <Link to={PRODUCT_CREATE_PATH}>
@@ -184,14 +179,7 @@ export function ProductsPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="package" />
-            Maxsulotlar ro&apos;yxati
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
@@ -200,7 +188,7 @@ export function ProductsPage() {
                 headers={[...TABLE_HEADERS]}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
@@ -241,7 +229,7 @@ export function ProductsPage() {
                   ) : (
                     products.map((product, index) => {
                       const currentPage = productsQuery.data?.meta.page ?? 1
-                      const currentPerPage = productsQuery.data?.meta.perPage ?? 20
+                      const currentPerPage = productsQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
                       const rowNumber =
                         (currentPage - 1) * currentPerPage + index + 1
 
@@ -326,8 +314,7 @@ export function ProductsPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

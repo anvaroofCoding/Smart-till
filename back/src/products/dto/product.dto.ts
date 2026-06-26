@@ -74,6 +74,9 @@ export class ProductResponseDto {
   @ApiProperty({ example: 'MXS-000001' })
   code: string;
 
+  @ApiProperty({ example: '2000000000012' })
+  barcode: string;
+
   @ApiProperty()
   description: string;
 

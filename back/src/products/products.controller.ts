@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -14,11 +15,16 @@ import {
 } from '@nestjs/swagger';
 import { ProductQueryDto } from './dto/product-query.dto';
 import {
+  CreateProductBarcodeDto,
+  ProductBarcodeResponseDto,
+} from './dto/product-barcode.dto';
+import {
   CreateProductDto,
   ProductResponseDto,
   SetProductStatusDto,
   UpdateProductDto,
 } from './dto/product.dto';
+import { ProductBarcodesService } from './product-barcodes.service';
 import { toProductResponse } from './products.mapper';
 import { ProductsService } from './products.service';
 
@@ -26,12 +32,42 @@ import { ProductsService } from './products.service';
 @ApiBearerAuth()
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly productBarcodesService: ProductBarcodesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Maxsulotlar ro\'yxati' })
   findAll(@Query() query: ProductQueryDto) {
     return this.productsService.findAll(query);
+  }
+
+  @Get(':productId/barcodes')
+  @ApiOperation({ summary: 'Maxsulot barkodlari' })
+  async listBarcodes(
+    @Param('productId') productId: string,
+  ): Promise<ProductBarcodeResponseDto[]> {
+    return this.productBarcodesService.listByProductId(productId);
+  }
+
+  @Post(':productId/barcodes')
+  @ApiOperation({ summary: 'Maxsulotga qo\'shimcha barkod qo\'shish' })
+  async addBarcode(
+    @Param('productId') productId: string,
+    @Body() dto: CreateProductBarcodeDto,
+  ): Promise<ProductBarcodeResponseDto> {
+    return this.productBarcodesService.addManualBarcode(productId, dto.value);
+  }
+
+  @Delete(':productId/barcodes/:barcodeId')
+  @ApiOperation({ summary: 'Qo\'shimcha barkodni o\'chirish' })
+  async removeBarcode(
+    @Param('productId') productId: string,
+    @Param('barcodeId') barcodeId: string,
+  ): Promise<{ success: true }> {
+    await this.productBarcodesService.removeBarcode(productId, barcodeId);
+    return { success: true };
   }
 
   @Get(':id')

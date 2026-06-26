@@ -1,22 +1,27 @@
 import { AppIcon } from '@/components/icons/app-icon'
-import { SettingsSelect } from '@/components/settings/settings-select'
+import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+  TABLE_FILTER_CELL_CLASS,
+  TABLE_FILTER_FIELD_CLASS,
+} from '@/components/shared/table-filter-field'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from '@/components/ui/field'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   ACCENT_THEMES,
   BASE_COLORS,
@@ -27,176 +32,178 @@ import {
 } from '@/features/appearance/appearance-options'
 import { useAppearance } from '@/features/appearance/appearance-context'
 import type { ColorMode } from '@/features/appearance/appearance.types'
+import { usePageMeta } from '@/hooks/use-page-meta'
+import { pageTitle } from '@/config/seo'
 
 const MODE_OPTIONS: { id: ColorMode; label: string }[] = [
   { id: 'light', label: "Yorug'" },
   { id: 'dark', label: "Qorong'u" },
 ]
 
+const TABLE_HEADERS = ['Sozlama', 'Qiymat'] as const
+
+interface SettingSelectRowProps<T extends string> {
+  id: string
+  label: string
+  value: T
+  options: { id: T; label: string }[]
+  onChange: (value: T) => void
+}
+
+function SettingSelectRow<T extends string>({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: SettingSelectRowProps<T>) {
+  return (
+    <TableRow className="hover:bg-muted/30">
+      <TableCell className="w-[42%] font-medium whitespace-nowrap">
+        {label}
+      </TableCell>
+      <TableCell className={TABLE_FILTER_CELL_CLASS}>
+        <Select value={value} onValueChange={(next) => onChange(next as T)}>
+          <SelectTrigger
+            id={id}
+            size="sm"
+            className={TABLE_FILTER_FIELD_CLASS}
+            aria-label={label}
+          >
+            <SelectValue placeholder="Tanlang" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 export function AppSettingsPage() {
   const { settings, updateSettings, resetSettings } = useAppearance()
 
+  usePageMeta({
+    title: pageTitle('Dastur sozlamalari', 'Sozlamalar'),
+  })
+
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-6 overflow-y-auto">
+    <div className="flex h-full min-h-0 w-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1
-            className="text-2xl font-semibold tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            Dastur sozlamalari
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Ko&apos;rinish, shrift, ikonka va bildirishnomalarni shu yerdan boshqaring.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={resetSettings}>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Dastur sozlamalari
+        </h1>
+        <Button variant="outline" onClick={resetSettings}>
           <AppIcon name="rotate-ccw" />
           Standartga qaytarish
         </Button>
       </div>
 
-      <div className="grid w-full gap-6 sm:grid-cols-2 xl:grid-cols-3">
-        <Card className="sm:col-span-2 xl:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AppIcon name="settings-2" />
-              Asosiy
-            </CardTitle>
-            <CardDescription>Bildirishnomalar va rang rejimi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup className="gap-6">
-              <Field orientation="horizontal">
-                <FieldContent>
-                  <FieldLabel htmlFor="notifications">Bildirishnomalar</FieldLabel>
-                  <FieldDescription>
-                    Yangi xabarlar va ogohlantirishlarni ko&apos;rsatish
-                  </FieldDescription>
-                </FieldContent>
-                <Switch
-                  id="notifications"
-                  checked={settings.notificationsEnabled}
-                  onCheckedChange={(checked) =>
-                    updateSettings({ notificationsEnabled: checked })
-                  }
-                />
-              </Field>
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <Table className={BORDERLESS_TABLE_CLASS}>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {TABLE_HEADERS.map((header) => (
+                  <TableHead
+                    key={header}
+                    className={header === 'Sozlama' ? 'w-[42%]' : undefined}
+                  >
+                    {header}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="hover:bg-muted/30">
+                <TableCell className="font-medium whitespace-nowrap">
+                  Bildirishnomalar
+                </TableCell>
+                <TableCell className={TABLE_FILTER_CELL_CLASS}>
+                  <div className="flex h-8 items-center">
+                    <Switch
+                      id="notifications"
+                      checked={settings.notificationsEnabled}
+                      onCheckedChange={(checked) =>
+                        updateSettings({ notificationsEnabled: checked })
+                      }
+                      aria-label="Bildirishnomalar"
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
 
-              <FieldSeparator />
+              <SettingSelectRow
+                id="mode"
+                label="Rang rejimi"
+                value={settings.mode}
+                options={MODE_OPTIONS}
+                onChange={(mode) => updateSettings({ mode })}
+              />
 
-              <div className="grid gap-6 sm:grid-cols-2">
-                <SettingsSelect
-                  id="mode"
-                  label="Rang rejimi"
-                  hint="Yorug' yoki qorong'u — butun dastur ranglari o'zgaradi"
-                  value={settings.mode}
-                  options={MODE_OPTIONS}
-                  onChange={(mode) => updateSettings({ mode })}
-                />
+              <SettingSelectRow
+                id="radius"
+                label="Burchak yumaloqligi"
+                value={settings.radius}
+                options={RADIUS_OPTIONS}
+                onChange={(radius) => updateSettings({ radius })}
+              />
 
-                <SettingsSelect
-                  id="radius"
-                  label="Burchak yumaloqligi"
-                  hint="Tugmalar va kartalar burchak shakli"
-                  value={settings.radius}
-                  options={RADIUS_OPTIONS}
-                  onChange={(radius) => updateSettings({ radius })}
-                />
-              </div>
-            </FieldGroup>
-          </CardContent>
-        </Card>
+              <SettingSelectRow
+                id="style"
+                label="Uslub"
+                value={settings.style}
+                options={UI_STYLES}
+                onChange={(style) => updateSettings({ style })}
+              />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Komponentlar uslubi</CardTitle>
-            <CardDescription>Interfeys elementlari ko&apos;rinishi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsSelect
-              id="style"
-              label="Uslub"
-              value={settings.style}
-              options={UI_STYLES}
-              onChange={(style) => updateSettings({ style })}
-            />
-          </CardContent>
-        </Card>
+              <SettingSelectRow
+                id="baseColor"
+                label="Asosiy palitra"
+                value={settings.baseColor}
+                options={BASE_COLORS}
+                onChange={(baseColor) => updateSettings({ baseColor })}
+              />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Asosiy rang</CardTitle>
-            <CardDescription>Fon va neytral ranglar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsSelect
-              id="baseColor"
-              label="Asosiy palitra"
-              value={settings.baseColor}
-              options={BASE_COLORS}
-              onChange={(baseColor) => updateSettings({ baseColor })}
-            />
-          </CardContent>
-        </Card>
+              <SettingSelectRow
+                id="theme"
+                label="Urg'u rangi"
+                value={settings.theme}
+                options={ACCENT_THEMES}
+                onChange={(theme) => updateSettings({ theme })}
+              />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Mavzu</CardTitle>
-            <CardDescription>Urg&apos;u va asosiy rang</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsSelect
-              id="theme"
-              label="Urg'u rangi"
-              value={settings.theme}
-              options={ACCENT_THEMES}
-              onChange={(theme) => updateSettings({ theme })}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Shriftlar</CardTitle>
-            <CardDescription>Sarlavha va matn shrifti</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup className="gap-4">
-              <SettingsSelect
+              <SettingSelectRow
                 id="headingFont"
                 label="Sarlavha shrifti"
                 value={settings.headingFont}
                 options={FONT_OPTIONS}
                 onChange={(headingFont) => updateSettings({ headingFont })}
               />
-              <SettingsSelect
+
+              <SettingSelectRow
                 id="bodyFont"
                 label="Asosiy matn shrifti"
                 value={settings.bodyFont}
                 options={FONT_OPTIONS}
                 onChange={(bodyFont) => updateSettings({ bodyFont })}
               />
-            </FieldGroup>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ikonkalar</CardTitle>
-            <CardDescription>Ikonka kutubxonasi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsSelect
-              id="iconLibrary"
-              label="Kutubxona"
-              hint="Yon panel, tugmalar va barcha ikonlar shu kutubxonadan ko'rinadi"
-              value={settings.iconLibrary}
-              options={ICON_LIBRARIES}
-              onChange={(iconLibrary) => updateSettings({ iconLibrary })}
-            />
-          </CardContent>
-        </Card>
+              <SettingSelectRow
+                id="iconLibrary"
+                label="Ikonka kutubxonasi"
+                value={settings.iconLibrary}
+                options={ICON_LIBRARIES}
+                onChange={(iconLibrary) => updateSettings({ iconLibrary })}
+              />
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

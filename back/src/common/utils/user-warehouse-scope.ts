@@ -1,5 +1,7 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { UserPosition } from '../constants/positions';
+import { UserRole } from '../constants/roles';
 
 export interface UserWarehouseScope {
   allWarehouses: boolean;
@@ -48,10 +50,15 @@ export function normalizeScopeWarehouseIds(
 
 export function resolveUserWarehouseScope(user: {
   position: UserPosition;
+  role?: UserRole;
   allWarehouses?: boolean;
   warehouseIds?: unknown[];
 }): UserWarehouseScope {
-  if (user.position === UserPosition.ADMIN || user.allWarehouses) {
+  if (
+    user.position === UserPosition.ADMIN ||
+    user.role === UserRole.ADMIN ||
+    user.allWarehouses
+  ) {
     return { allWarehouses: true, warehouseIds: [] };
   }
 
@@ -79,13 +86,35 @@ export function isWarehouseAllowed(
   );
 }
 
+export function ensureWarehouseAllowed(
+  scope: UserWarehouseScope | undefined,
+  warehouseId: unknown,
+): void {
+  if (!isWarehouseAllowed(scope, warehouseId)) {
+    throw new ForbiddenException('Bu filialga ruxsatingiz yo\'q');
+  }
+}
+
+export function buildScopeWarehouseFilter(
+  scope: UserWarehouseScope | undefined,
+  field = 'warehouseId',
+): Record<string, unknown> | null {
+  if (!scope || scope.allWarehouses) {
+    return {};
+  }
+
+  if (scope.warehouseIds.length === 0) {
+    return null;
+  }
+
+  return { [field]: { $in: scope.warehouseIds } };
+}
+
 export function assertWarehouseAccess(
   scope: UserWarehouseScope,
   warehouseId: unknown,
 ): void {
-  if (!isWarehouseAllowed(scope, warehouseId)) {
-    throw new Error('WAREHOUSE_FORBIDDEN');
-  }
+  ensureWarehouseAllowed(scope, warehouseId);
 }
 
 export function emptyPaginatedMeta(page: number, perPage: number) {

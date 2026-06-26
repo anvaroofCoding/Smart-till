@@ -24,6 +24,7 @@ export function toProductResponse(product: ProductDocument): ProductResponseDto 
     id: product._id.toString(),
     name: product.name,
     code: product.code ?? '',
+    barcode: product.barcode ?? '',
     description: product.description ?? '',
     category: resolveRelation(
       product.categoryId as Types.ObjectId | { _id: Types.ObjectId; name: string },

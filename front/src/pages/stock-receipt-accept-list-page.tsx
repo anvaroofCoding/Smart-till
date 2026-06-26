@@ -8,14 +8,8 @@ import {
   type StockReceiptTableFilters,
 } from '@/components/stock-receipts/stock-receipt-table-filters'
 import { StockReceiptsListTable } from '@/components/stock-receipts/stock-receipts-list-table'
-import { Badge } from '@/components/ui/badge'
+import { LIST_PAGE_TABLE_SECTION_CLASS } from '@/components/shared/table-filter-field'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
@@ -84,10 +78,6 @@ export function StockReceiptAcceptListPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Kirimni qabul qilish
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Yuborilgan kirimlarni qidiring yoki qatorni bosib qabul qiling va
-            tarixni ko&apos;ring.
-          </p>
         </div>
         <Button variant="outline" asChild>
           <Link to="/omborlar/maxsulot-kirim">
@@ -97,35 +87,26 @@ export function StockReceiptAcceptListPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="check" />
-            Yuborilgan kirimlar
-            <Badge variant="secondary">{paginationMeta.total}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <StockReceiptsListTable
-            receipts={receipts}
-            filters={filters}
-            paginationMeta={paginationMeta}
-            showTableSkeleton={showTableSkeleton}
-            showTableRefreshing={showTableRefreshing}
-            onFilterChange={handleFilterChange}
-            onPageChange={setPage}
-            onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
-            emptyMessage="Yuborilgan kirimlar topilmadi"
-            onRowClick={(receipt) => {
-              if (receipt.status === 'in_progress') {
-                navigate(`${LIST_PATH}/${receipt.id}`)
-                return
-              }
-              navigate(`${DETAIL_PATH}/${receipt.id}`)
-            }}
-          />
-        </CardContent>
-      </Card>
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <StockReceiptsListTable
+          receipts={receipts}
+          filters={filters}
+          paginationMeta={paginationMeta}
+          showTableSkeleton={showTableSkeleton}
+          showTableRefreshing={showTableRefreshing}
+          onFilterChange={handleFilterChange}
+          onPageChange={setPage}
+          onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
+          emptyMessage="Yuborilgan kirimlar topilmadi"
+          onRowClick={(receipt) => {
+            if (receipt.status === 'in_progress') {
+              navigate(`${LIST_PATH}/${receipt.id}`)
+              return
+            }
+            navigate(`${DETAIL_PATH}/${receipt.id}`)
+          }}
+        />
+      </div>
     </div>
   )
 }

@@ -68,6 +68,16 @@ export interface MeResponse {
   user: AuthUser
 }
 
+export interface UpdateProfileRequest {
+  firstName?: string
+  lastName?: string
+  login?: string
+  phone?: string
+  birthDate?: string
+  password?: string
+  avatar?: string
+}
+
 export interface InventoryItem {
   id: string
   sku: string

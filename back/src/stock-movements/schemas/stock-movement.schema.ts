@@ -37,10 +37,10 @@ export class StockMovement {
   @Prop({ required: true, trim: true })
   sourceName: string;
 
-  @Prop({ type: Types.ObjectId, ref: Supplier.name, required: true })
-  supplierId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: Supplier.name })
+  supplierId?: Types.ObjectId;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ trim: true, default: '' })
   supplierName: string;
 
   @Prop({ required: true, min: 0 })

@@ -107,4 +107,25 @@ export class WarehouseGateway
   }) {
     this.server.emit(SOCKET_EVENTS.WAREHOUSE_ALERT, payload);
   }
+
+  emitNotificationCreated(payload: {
+    timestamp: string;
+    userIds: string[];
+    items?: Array<{
+      userId: string;
+      notification: {
+        id: string;
+        type: string;
+        title: string;
+        message: string;
+        entityType?: string;
+        entityId?: string;
+        metadata?: Record<string, unknown>;
+        readAt?: Date;
+        createdAt: Date;
+      };
+    }>;
+  }) {
+    this.server.emit(SOCKET_EVENTS.NOTIFICATION_CREATED, payload);
+  }
 }

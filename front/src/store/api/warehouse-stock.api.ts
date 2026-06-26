@@ -15,6 +15,7 @@ export interface WarehouseStockQueryParams {
   categoryId?: string
   brandId?: string
   productName?: string
+  barcode?: string
   warehouseName?: string
   unitPrice?: number
   sellingPrice?: number

@@ -1,11 +1,12 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { DEFAULT_PER_PAGE, PaginationDto } from '../common/dto/pagination.dto';
 import type { UserWarehouseScope } from '../common/utils/user-warehouse-scope';
 import { emptyPaginatedMeta } from '../common/utils/user-warehouse-scope';
 import {
@@ -40,12 +41,13 @@ export class WarehousesService {
       address: dto.address?.trim() ?? '',
       description: dto.description?.trim() ?? '',
       isActive: dto.isActive ?? true,
+      dailySalesPlan: dto.dailySalesPlan ?? 0,
     });
   }
 
   async findAll(pagination: PaginationDto, scope?: UserWarehouseScope) {
     const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+    const perPage = pagination.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter: {
@@ -95,24 +97,35 @@ export class WarehousesService {
     };
   }
 
-  async findById(id: string): Promise<WarehouseDocument> {
+  async findById(id: string, scope?: UserWarehouseScope): Promise<WarehouseDocument> {
     const warehouse = await this.warehouseModel.findById(id).exec();
     if (!warehouse) {
       throw new NotFoundException('Ombor topilmadi');
     }
+
+    if (scope && !scope.allWarehouses) {
+      const allowed = scope.warehouseIds.some(
+        (warehouseId) => warehouseId.toString() === warehouse._id.toString(),
+      );
+      if (!allowed) {
+        throw new ForbiddenException('Bu filialga ruxsatingiz yo\'q');
+      }
+    }
+
     return warehouse;
   }
 
-  async findByIdResponse(id: string) {
-    const warehouse = await this.findById(id);
+  async findByIdResponse(id: string, scope?: UserWarehouseScope) {
+    const warehouse = await this.findById(id, scope);
     return toWarehouseResponse(warehouse);
   }
 
   async update(
     id: string,
     dto: UpdateWarehouseDto,
+    scope?: UserWarehouseScope,
   ): Promise<WarehouseDocument> {
-    const warehouse = await this.findById(id);
+    const warehouse = await this.findById(id, scope);
 
     if (dto.name !== undefined) {
       const name = dto.name.trim();
@@ -146,19 +159,27 @@ export class WarehousesService {
       warehouse.isActive = dto.isActive;
     }
 
+    if (dto.dailySalesPlan !== undefined) {
+      warehouse.dailySalesPlan = dto.dailySalesPlan;
+    }
+
     await warehouse.save();
     return warehouse;
   }
 
-  async setActive(id: string, isActive: boolean): Promise<WarehouseDocument> {
-    const warehouse = await this.findById(id);
+  async setActive(
+    id: string,
+    isActive: boolean,
+    scope?: UserWarehouseScope,
+  ): Promise<WarehouseDocument> {
+    const warehouse = await this.findById(id, scope);
     warehouse.isActive = isActive;
     await warehouse.save();
     return warehouse;
   }
 
-  async remove(id: string): Promise<void> {
-    await this.findById(id);
+  async remove(id: string, scope?: UserWarehouseScope): Promise<void> {
+    await this.findById(id, scope);
     await this.warehouseModel.findByIdAndDelete(id).exec();
   }
 }

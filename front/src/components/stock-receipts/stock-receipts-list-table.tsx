@@ -3,6 +3,10 @@ import {
   DataTableSkeleton,
   QueryRefreshIndicator,
 } from '@/components/loading'
+import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -61,7 +65,7 @@ export function StockReceiptsListTable({
   const columnCount = STOCK_RECEIPT_TABLE_HEADERS.length
 
   return (
-    <>
+    <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
       <div className="min-h-0 flex-1 overflow-auto">
         {showTableSkeleton ? (
           <DataTableSkeleton
@@ -70,7 +74,7 @@ export function StockReceiptsListTable({
             headers={[...STOCK_RECEIPT_TABLE_HEADERS]}
           />
         ) : (
-          <Table>
+          <Table className={BORDERLESS_TABLE_CLASS}>
             <TableHeader>
               <TableRow>
                 {STOCK_RECEIPT_TABLE_HEADERS.map((header) => (
@@ -169,6 +173,6 @@ export function StockReceiptsListTable({
       )}
 
       <QueryRefreshIndicator visible={showTableRefreshing} />
-    </>
+    </div>
   )
 }

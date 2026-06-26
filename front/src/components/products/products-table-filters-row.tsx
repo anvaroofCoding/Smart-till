@@ -1,4 +1,4 @@
-import { TABLE_FILTER_CELL_CLASS, TABLE_FILTER_FIELD_CLASS } from '@/components/shared/table-filter-field'
+import { TABLE_FILTER_CELL_CLASS, TABLE_FILTER_FIELD_CLASS, BORDERLESS_FILTER_ROW_CLASS } from '@/components/shared/table-filter-field'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -30,7 +30,7 @@ export function ProductTableFiltersRow({
   onChange,
 }: ProductTableFiltersRowProps) {
   return (
-    <TableRow className="bg-muted/30 hover:bg-muted/30">
+    <TableRow className={BORDERLESS_FILTER_ROW_CLASS}>
       <TableCell className={TABLE_FILTER_CELL_CLASS} />
 
       <TableCell className={TABLE_FILTER_CELL_CLASS}>

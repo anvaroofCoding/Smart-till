@@ -26,6 +26,9 @@ async function bootstrap() {
   const corsOrigins = config.get<string[]>('app.corsOrigins') ?? [
     'http://localhost:5173',
   ];
+  const isDev = config.get<string>('app.env') !== 'production';
+  const lanOriginPattern =
+    /^https?:\/\/(localhost|127\.0\.0\.1|\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$/;
   const redisEnabled = config.get<boolean>('redis.enabled');
   const bodyLimit = config.get<string>('app.bodyLimit') ?? '5mb';
 
@@ -61,7 +64,19 @@ async function bootstrap() {
   app.use(session(sessionOptions));
 
   app.enableCors({
-    origin: corsOrigins,
+    origin: isDev
+      ? (origin, callback) => {
+          if (
+            !origin ||
+            corsOrigins.includes(origin) ||
+            lanOriginPattern.test(origin)
+          ) {
+            callback(null, true);
+            return;
+          }
+          callback(null, false);
+        }
+      : corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -95,10 +110,11 @@ async function bootstrap() {
     logger.log(`Swagger: http://localhost:${port}/${swaggerPath}`);
   }
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`API: http://localhost:${port}/${apiPrefix}`);
   logger.log(`WebSocket: http://localhost:${port}`);
+  logger.log(`LAN: boshqa qurilmalar http://<sizning-IP>:${port}/${apiPrefix} orqali ulanishi mumkin`);
   logger.log(`Environment: ${config.get<string>('app.env')}`);
   logger.log(`Redis: ${redisEnabled ? 'enabled' : 'disabled (in-memory mode)'}`);
 }

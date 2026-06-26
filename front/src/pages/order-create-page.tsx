@@ -1,94 +1,112 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { OrderProductPicker } from '@/components/orders/order-product-picker'
+import { LIST_PAGE_TABLE_SECTION_CLASS } from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { buildOrderItemsPayload } from '@/components/orders/order-form-utils'
+import { useOrderProductSearch } from '@/hooks/use-order-product-search'
 import { usePageMeta } from '@/hooks/use-page-meta'
-import { useWarehouseStockCatalog } from '@/hooks/use-warehouse-stock-catalog'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { notify } from '@/lib/notify'
+import {
+  useClaimSellerCartMutation,
+} from '@/store/api/seller-carts.api'
 import { useCreateDraftOrderMutation } from '@/store/api/orders.api'
-import { useGetProductsQuery } from '@/store/api/products.api'
 import type { ProductRecord } from '@/types/product.types'
 
+const ORDERS_LIST_PATH = '/kassir/buyurtmalar'
 const ORDER_EDIT_PATH = '/kassir/buyurtmalar'
 
 export function OrderCreatePage() {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [comboOpen, setComboOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<ProductRecord | null>(
-    null,
-  )
-
+  const [cardNumber, setCardNumber] = useState('')
   const [createDraftOrder, createDraftState] = useCreateDraftOrderMutation()
+  const [claimSellerCart, claimState] = useClaimSellerCartMutation()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const {
+    search,
+    comboOpen,
+    selectedProduct,
+    availableProducts,
+    stockCatalog,
+    isLoading,
+    isStockReady,
+    setComboOpen,
+    handleSearchChange,
+    handleSelectProduct,
+    handleSearchKeyDown,
+    resolveProductForSubmit,
+    resetSelection,
+  } = useOrderProductSearch()
 
   usePageMeta({
     title: pageTitle('Buyurtma yaratish', 'Kassir'),
   })
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search), 300)
-    return () => window.clearTimeout(timer)
-  }, [search])
+  const isBusy = createDraftState.isLoading || claimState.isLoading
 
-  const productsQuery = useGetProductsQuery(
-    {
-      page: 1,
-      perPage: 50,
-      search: debouncedSearch.trim() || undefined,
-      isActive: true,
-    },
-    { skip: !debouncedSearch.trim() },
-  )
+  function focusProductSearch() {
+    window.requestAnimationFrame(() => searchInputRef.current?.focus())
+  }
 
-  const stockCatalogQuery = useWarehouseStockCatalog()
-  const stockCatalog = stockCatalogQuery.catalog
+  async function handleClaimCardNumber(value: string) {
+    const normalized = value.trim()
+    if (!normalized) return
 
-  const availableProducts = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase()
-    return (productsQuery.data?.data ?? []).filter((product) => {
-      if (!product.isActive) return false
-      const stock = stockCatalog.get(product.id)
-      if (!stock || stock.availableQuantity <= 0) return false
-      if (!query) return false
-      return (
-        product.name.toLowerCase().includes(query) ||
-        product.code.toLowerCase().includes(query)
+    try {
+      const order = await claimSellerCart(normalized).unwrap()
+      notify.success('Sotuvchi kartasidagi maxsulotlar yuklandi')
+      navigate(`${ORDER_EDIT_PATH}/${order.id}`)
+    } catch (err) {
+      notify.error(
+        getApiErrorMessage(err, 'Bu karta raqamida faol buyurtma topilmadi'),
       )
-    })
-  }, [productsQuery.data?.data, debouncedSearch, stockCatalog])
-
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (selectedProduct) {
-      setSelectedProduct(null)
+      focusProductSearch()
     }
-    setComboOpen(value.trim().length > 0)
   }
 
-  function handleSelectProduct(product: ProductRecord) {
-    setSelectedProduct(product)
-    setSearch(`${product.name} (${product.code})`)
-    setComboOpen(false)
+  function handleCardNumberKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    void handleClaimCardNumber(cardNumber)
   }
 
-  async function handleAddProduct() {
-    if (!selectedProduct) return
+  async function handleAddProduct(product?: ProductRecord) {
+    const target = product ?? resolveProductForSubmit()
+    if (!target) {
+      if (!isStockReady) {
+        notify.error('Ombor qoldiqlari hali yuklanmoqda')
+        return
+      }
+      if (search.trim()) {
+        notify.error('Maxsulot topilmadi')
+      }
+      return
+    }
 
-    const stock = stockCatalog.get(selectedProduct.id)
+    const stock = stockCatalog.get(target.id)
     if (!stock || stock.availableQuantity <= 0) {
       notify.error('Omborda bu maxsulot qolmagan')
+      resetSelection()
+      focusProductSearch()
+      return
+    }
+
+    if (stock.sellingPrice <= 0) {
+      notify.error('Maxsulot uchun sotish narxi aniqlanmadi')
+      resetSelection()
+      focusProductSearch()
       return
     }
 
     const lineItem = {
-      id: selectedProduct.id,
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      productCode: selectedProduct.code,
+      id: target.id,
+      productId: target.id,
+      productName: target.name,
+      productCode: target.code,
       unitPrice: stock.sellingPrice,
       quantity: 1,
       discount: 0,
@@ -99,36 +117,48 @@ export function OrderCreatePage() {
         items: buildOrderItemsPayload([lineItem]),
       }).unwrap()
 
-      notify.success('Buyurtma yaratildi')
-      navigate(`${ORDER_EDIT_PATH}/${order.id}`)
+      navigate(`${ORDER_EDIT_PATH}/${order.id}`, { replace: true })
     } catch (err) {
       notify.error(getApiErrorMessage(err, 'Buyurtmani yaratib bo\'lmadi'))
+      focusProductSearch()
     }
   }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Buyurtma qo&apos;shish
-      </h1>
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Buyurtma yaratish
+        </h1>
+        <Button asChild variant="outline">
+          <Link to={ORDERS_LIST_PATH}>Buyurtmalar ro&apos;yxati</Link>
+        </Button>
+      </div>
 
-      <OrderProductPicker
-        search={search}
-        comboOpen={comboOpen}
-        selectedProduct={selectedProduct}
-        availableProducts={availableProducts}
-        stockCatalog={stockCatalog}
-        isLoading={
-          productsQuery.isLoading ||
-          productsQuery.isFetching ||
-          stockCatalogQuery.isLoading
-        }
-        isAdding={createDraftState.isLoading}
-        onSearchChange={handleSearchChange}
-        onComboOpenChange={setComboOpen}
-        onSelectProduct={handleSelectProduct}
-        onAddProduct={() => void handleAddProduct()}
-      />
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <OrderProductPicker
+          autoFocus
+          searchInputRef={searchInputRef}
+          showCardNumber
+          cardNumber={cardNumber}
+          onCardNumberChange={setCardNumber}
+          onCardNumberKeyDown={handleCardNumberKeyDown}
+          search={search}
+          comboOpen={comboOpen}
+          selectedProduct={selectedProduct}
+          availableProducts={availableProducts}
+          stockCatalog={stockCatalog}
+          isLoading={isLoading}
+          isAdding={isBusy}
+          isStockReady={isStockReady}
+          resolveProductForSubmit={resolveProductForSubmit}
+          onSearchKeyDown={handleSearchKeyDown}
+          onSearchChange={handleSearchChange}
+          onComboOpenChange={setComboOpen}
+          onSelectProduct={handleSelectProduct}
+          onAddProduct={(product) => void handleAddProduct(product)}
+        />
+      </div>
     </div>
   )
 }

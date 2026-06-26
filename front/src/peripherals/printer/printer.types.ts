@@ -6,11 +6,7 @@ export interface LabelSize {
 }
 
 export interface PrintLabelData {
-  title: string
   barcode: string
-  sku?: string
-  quantity?: number
-  location?: string
 }
 
 export interface PrintOptions {

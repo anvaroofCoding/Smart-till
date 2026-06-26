@@ -107,6 +107,7 @@ interface PaymentTypeFormProps {
   initialValues: PaymentTypeFormValues
   isSaving?: boolean
   error?: string | null
+  isSystem?: boolean
   onSubmit: (values: PaymentTypeFormValues) => void | Promise<void>
   onCancel: () => void
 }
@@ -116,6 +117,7 @@ export function PaymentTypeForm({
   initialValues,
   isSaving,
   error,
+  isSystem = false,
   onSubmit,
   onCancel,
 }: PaymentTypeFormProps) {
@@ -190,9 +192,14 @@ export function PaymentTypeForm({
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, name: e.target.value }))
                 }
-                disabled={isSaving}
+                disabled={isSaving || isSystem}
                 autoFocus
               />
+              {isSystem && (
+                <p className="text-muted-foreground text-xs">
+                  Tizim to&apos;lov turi — nomini o&apos;zgartirib bo&apos;lmaydi
+                </p>
+              )}
             </Field>
 
             <Field>
@@ -247,7 +254,7 @@ export function PaymentTypeForm({
                   <Switch
                     id="payment-type-active"
                     checked={form.isActive}
-                    disabled={isSaving}
+                    disabled={isSaving || isSystem}
                     onCheckedChange={(isActive) =>
                       setForm((prev) => ({ ...prev, isActive }))
                     }

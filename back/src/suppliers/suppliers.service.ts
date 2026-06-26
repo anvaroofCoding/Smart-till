@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DEFAULT_SUPPLIER_CURRENCY } from '../common/constants/currency';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { DEFAULT_PER_PAGE, PaginationDto } from '../common/dto/pagination.dto';
 import { CreateSupplierDto, UpdateSupplierDto } from './dto/supplier.dto';
 import { toSupplierResponse } from './suppliers.mapper';
 import { Supplier, SupplierDocument } from './schemas/supplier.schema';
@@ -37,7 +37,7 @@ export class SuppliersService {
 
   async findAll(pagination: PaginationDto) {
     const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+    const perPage = pagination.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter: { $or?: Array<Record<string, unknown>> } = {};

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -99,9 +98,6 @@ export function CategoryFormDialog({
           <DialogTitle>
             {mode === 'create' ? 'Yangi kategoriya' : 'Kategoriyani tahrirlash'}
           </DialogTitle>
-          <DialogDescription>
-            Nom majburiy. Izoh va holat ixtiyoriy.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>

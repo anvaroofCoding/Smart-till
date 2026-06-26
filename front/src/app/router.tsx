@@ -30,11 +30,30 @@ import { PaymentTypeEditPage } from '@/pages/payment-type-edit-page'
 import { PaymentTypesPage } from '@/pages/payment-types-page'
 import { OrderCreatePage } from '@/pages/order-create-page'
 import { OrderEditPage } from '@/pages/order-edit-page'
+import { OrderFulfillmentListPage } from '@/pages/order-fulfillment-list-page'
+import { OrderFulfillmentPage } from '@/pages/order-fulfillment-page'
+import { OrderReceiptPage } from '@/pages/order-receipt-page'
 import { OrdersPage } from '@/pages/orders-page'
+import { ReportsPage } from '@/pages/reports-page'
+import { ProfilePage } from '@/pages/profile-page'
 import { PlaceholderPage } from '@/pages/placeholder-page'
 import { PriceSettingsPage } from '@/pages/price-settings-page'
 import { PriceSettingCreatePage } from '@/pages/price-setting-create-page'
 import { PriceSettingEditPage } from '@/pages/price-setting-edit-page'
+import { DailyBalancesPage } from '@/pages/daily-balances-page'
+import { DailyBalanceDetailPage } from '@/pages/daily-balance-detail-page'
+import { DailyBalanceIncomesPage } from '@/pages/daily-balance-incomes-page'
+import { DailyBalanceExpensesPage } from '@/pages/daily-balance-expenses-page'
+import { ExpenseCategoriesListPage } from '@/pages/expense-categories-list-page'
+import { SellerOrdersPage } from '@/pages/seller-orders-page'
+import { SellerProductsPage } from '@/pages/seller-products-page'
+import { SellerProductDetailPage } from '@/pages/seller-product-detail-page'
+import { WarehouseTransfersPage } from '@/pages/warehouse-transfers-page'
+import { WarehouseTransferCreatePage } from '@/pages/warehouse-transfer-create-page'
+import { WarehouseTransferAcceptListPage } from '@/pages/warehouse-transfer-accept-list-page'
+import { WarehouseTransferAcceptPage } from '@/pages/warehouse-transfer-accept-page'
+import { WarehouseTransferViewPage } from '@/pages/warehouse-transfer-view-page'
+import { WarehouseTransferNakladnoyPage } from '@/pages/warehouse-transfer-nakladnoy-page'
 
 const menuRoutes = flattenSidebarRoutes()
 
@@ -66,8 +85,27 @@ const USER_EDIT_PATH = 'sozlamalar/foydalanuvchilar/:id/tahrirlash'
 const ORDER_CREATE_PATH = 'kassir/buyurtma-yaratish'
 const ORDERS_PATH = 'kassir/buyurtmalar'
 const ORDER_EDIT_PATH = 'kassir/buyurtmalar/:id'
+const ORDER_RECEIPT_PATH = 'kassir/buyurtmalar/:id/chek'
+const ORDER_FULFILLMENT_PATH = 'kassir/buyurtmalar/:id/chiqim'
+const ORDER_FULFILLMENT_LIST_PATH = 'kassir/buyurtmani-chiqim-qilish'
+const DAILY_BALANCES_PATH = 'kassir/kunlik-balanslar'
+const DAILY_BALANCE_DETAIL_PATH = 'kassir/kunlik-balanslar/:id'
+const DAILY_BALANCE_INCOMES_PATH = 'kassir/kirimlar'
+const DAILY_BALANCE_EXPENSES_PATH = 'kassir/xarajatlar'
+const EXPENSE_CATEGORIES_LIST_PATH = 'kassir/xarajat-turlari'
+const REPORTS_PATH = 'kassir/hisobotlar'
 const PRICE_SETTING_CREATE_PATH = 'sozlamalar/narx/yaratish'
 const PRICE_SETTING_EDIT_PATH = 'sozlamalar/narx/:id/tahrirlash'
+const SELLER_PRODUCTS_PATH = 'sotuvchilar/maxsulotlar'
+const SELLER_PRODUCT_DETAIL_PATH = 'sotuvchilar/maxsulotlar/:id'
+const SELLER_ORDERS_PATH = 'sotuvchilar/buyurtmalar'
+const TRANSFERS_PATH = 'transfer/transferlar'
+const TRANSFER_CREATE_PATH = 'transfer/transferlar/yaratish'
+const TRANSFER_VIEW_PATH = 'transfer/transferlar/:id'
+const TRANSFER_ACCEPT_LIST_PATH = 'transfer/qabul-qilish'
+const TRANSFER_ACCEPT_PATH = 'transfer/qabul-qilish/:id'
+const TRANSFER_NAKLADNOY_PATH = 'transfer/nakladnoy/:id'
+const PROFILE_PATH = 'profil'
 
 const router = createBrowserRouter([
   {
@@ -84,6 +122,10 @@ const router = createBrowserRouter([
     path: '/',
     Component: AuthGuard,
     children: [
+      {
+        path: TRANSFER_NAKLADNOY_PATH,
+        element: <WarehouseTransferNakladnoyPage />,
+      },
       {
         Component: DashboardLayout,
         children: [
@@ -120,12 +162,36 @@ const router = createBrowserRouter([
                 <OrderCreatePage />
               ) : route.path === ORDERS_PATH ? (
                 <OrdersPage />
+              ) : route.path === ORDER_FULFILLMENT_LIST_PATH ? (
+                <OrderFulfillmentListPage />
+              ) : route.path === DAILY_BALANCES_PATH ? (
+                <DailyBalancesPage />
+              ) : route.path === DAILY_BALANCE_INCOMES_PATH ? (
+                <DailyBalanceIncomesPage />
+              ) : route.path === DAILY_BALANCE_EXPENSES_PATH ? (
+                <DailyBalanceExpensesPage />
+              ) : route.path === EXPENSE_CATEGORIES_LIST_PATH ? (
+                <ExpenseCategoriesListPage />
+              ) : route.path === REPORTS_PATH ? (
+                <ReportsPage />
               ) : route.path === WAREHOUSE_STOCK_PATH ? (
                 <WarehouseProductQuantitiesPage />
+              ) : route.path === TRANSFERS_PATH ? (
+                <WarehouseTransfersPage />
+              ) : route.path === TRANSFER_ACCEPT_LIST_PATH ? (
+                <WarehouseTransferAcceptListPage />
+              ) : route.path === SELLER_PRODUCTS_PATH ? (
+                <SellerProductsPage />
+              ) : route.path === SELLER_ORDERS_PATH ? (
+                <SellerOrdersPage />
               ) : (
                 <PlaceholderPage title={route.title} section={route.section} />
               ),
           })),
+          {
+            path: PROFILE_PATH,
+            element: <ProfilePage />,
+          },
           {
             path: PAYMENT_TYPE_CREATE_PATH,
             element: <PaymentTypeCreatePage />,
@@ -183,12 +249,40 @@ const router = createBrowserRouter([
             element: <OrderEditPage />,
           },
           {
+            path: ORDER_RECEIPT_PATH,
+            element: <OrderReceiptPage />,
+          },
+          {
+            path: ORDER_FULFILLMENT_PATH,
+            element: <OrderFulfillmentPage />,
+          },
+          {
             path: PRICE_SETTING_CREATE_PATH,
             element: <PriceSettingCreatePage />,
           },
           {
             path: PRICE_SETTING_EDIT_PATH,
             element: <PriceSettingEditPage />,
+          },
+          {
+            path: DAILY_BALANCE_DETAIL_PATH,
+            element: <DailyBalanceDetailPage />,
+          },
+          {
+            path: SELLER_PRODUCT_DETAIL_PATH,
+            element: <SellerProductDetailPage />,
+          },
+          {
+            path: TRANSFER_CREATE_PATH,
+            element: <WarehouseTransferCreatePage />,
+          },
+          {
+            path: TRANSFER_VIEW_PATH,
+            element: <WarehouseTransferViewPage />,
+          },
+          {
+            path: TRANSFER_ACCEPT_PATH,
+            element: <WarehouseTransferAcceptPage />,
           },
         ],
       },

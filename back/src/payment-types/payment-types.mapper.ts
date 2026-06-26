@@ -12,7 +12,10 @@ export function toPaymentTypeResponse(
       months: plan.months,
       interestPercent: plan.interestPercent,
     })),
+    channel: paymentType.channel ?? 'other',
     isActive: paymentType.isActive,
+    systemKey: paymentType.systemKey,
+    isSystem: !!paymentType.systemKey,
     createdAt: (paymentType as PaymentTypeDocument & { createdAt: Date })
       .createdAt,
     updatedAt: (paymentType as PaymentTypeDocument & { updatedAt: Date })

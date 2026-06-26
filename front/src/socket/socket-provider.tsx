@@ -38,6 +38,15 @@ function invalidateCachesOnRealtimeEvent() {
   )
 }
 
+function invalidateNotificationCaches() {
+  store.dispatch(
+    baseApi.util.invalidateTags([
+      { type: API_TAGS.Notification, id: 'LIST' },
+      { type: API_TAGS.Notification, id: 'UNREAD' },
+    ]),
+  )
+}
+
 export function SocketProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const [isConnected, setIsConnected] = useState(false)
@@ -63,6 +72,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     activeSocket.on(SOCKET_EVENTS.STOCK_LOW, invalidateCachesOnRealtimeEvent)
     activeSocket.on(SOCKET_EVENTS.ORDER_CREATED, invalidateCachesOnRealtimeEvent)
     activeSocket.on(SOCKET_EVENTS.ORDER_UPDATED, invalidateCachesOnRealtimeEvent)
+    activeSocket.on(SOCKET_EVENTS.NOTIFICATION_CREATED, invalidateNotificationCaches)
 
     return () => {
       activeSocket.off('connect', handleConnect)
@@ -72,6 +82,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       activeSocket.off(SOCKET_EVENTS.STOCK_LOW, invalidateCachesOnRealtimeEvent)
       activeSocket.off(SOCKET_EVENTS.ORDER_CREATED, invalidateCachesOnRealtimeEvent)
       activeSocket.off(SOCKET_EVENTS.ORDER_UPDATED, invalidateCachesOnRealtimeEvent)
+      activeSocket.off(SOCKET_EVENTS.NOTIFICATION_CREATED, invalidateNotificationCaches)
     }
   }, [isAuthenticated])
 

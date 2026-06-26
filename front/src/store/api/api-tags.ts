@@ -11,6 +11,12 @@ export const API_TAGS = {
   PaymentType: 'PaymentType',
   PriceSetting: 'PriceSetting',
   Order: 'Order',
+  Notification: 'Notification',
+  Report: 'Report',
+  DailyBalance: 'DailyBalance',
+  ExpenseCategory: 'ExpenseCategory',
+  SellerCart: 'SellerCart',
+  WarehouseTransfer: 'WarehouseTransfer',
   Health: 'Health',
 } as const
 

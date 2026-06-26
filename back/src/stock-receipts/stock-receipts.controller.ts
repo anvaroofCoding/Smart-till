@@ -272,7 +272,7 @@ export class StockReceiptsController {
 
     const scope = await this.usersService.getWarehouseScope(user.sub);
 
-    await this.stockReceiptsService.accept(id, dto, scope);
+    await this.stockReceiptsService.accept(id, dto, scope, user.sub);
 
     return this.stockReceiptsService.findByIdResponse(id, scope);
 

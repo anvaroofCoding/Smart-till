@@ -67,6 +67,23 @@ function buildInitialRows(items: StockReceiptItemRecord[]): Record<string, Accep
   )
 }
 
+function isPartialAccept(
+  items: StockReceiptItemRecord[],
+  rows: Record<string, AcceptRowState>,
+): boolean {
+  for (const item of items) {
+    const row = rows[item.id]
+    if (!row?.received) return true
+
+    const qty = Number(row.receivedQuantity)
+    if (Number.isNaN(qty) || qty < item.quantity) {
+      return true
+    }
+  }
+
+  return false
+}
+
 export function StockReceiptAcceptPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -190,7 +207,11 @@ export function StockReceiptAcceptPage() {
         },
       }).unwrap()
 
-      notify.success('Kirim qabul qilindi')
+      notify.success(
+        isPartialAccept(receipt.items, rows)
+          ? 'Kirim qisman qabul qilindi'
+          : 'Kirim qabul qilindi',
+      )
       setConfirmOpen(false)
       navigate(LIST_PATH)
     } catch (err) {

@@ -18,6 +18,12 @@ export class WarehouseStockProductDto {
   @ApiProperty()
   code: string;
 
+  @ApiProperty({ example: '2000000000012' })
+  barcode: string;
+
+  @ApiProperty({ type: [String], example: ['2000000000012', '8690000000012'] })
+  barcodes: string[];
+
   @ApiProperty({ type: WarehouseStockRelationDto })
   category: WarehouseStockRelationDto;
 

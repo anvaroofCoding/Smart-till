@@ -4,7 +4,7 @@ import axios, {
   type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from 'axios'
-import { env } from '@/config/env'
+import { env, resolveApiUrl } from '@/config/env'
 import type { ApiErrorBody } from '@/types/api.types'
 
 const TOKEN_STORAGE_KEY = 'warehouse_access_token'
@@ -34,6 +34,7 @@ export function setStoredAccessToken(token: string | null) {
 
 function attachAuthInterceptor(instance: AxiosInstance) {
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    config.baseURL = resolveApiUrl()
     const token = authTokenGetter?.() ?? getStoredAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

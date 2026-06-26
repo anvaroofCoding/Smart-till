@@ -2,18 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 
 import { AppIcon } from '@/components/icons/app-icon'
 import { SupplierLedgerEntryDialog } from '@/components/suppliers/supplier-ledger-entry-dialog'
+import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import {
   DataTableSkeleton,
   QueryRefreshIndicator,
 } from '@/components/loading'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -27,6 +25,7 @@ import { useQueryLoading } from '@/hooks/use-query-loading'
 import { formatDateDisplay } from '@/lib/date-format'
 import { formatMoney } from '@/lib/format-money'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { notify } from '@/lib/notify'
 import {
   useAddSupplierDebtMutation,
@@ -35,14 +34,22 @@ import {
 } from '@/store/api/suppliers.api'
 import type { SupplierLedgerEntryType } from '@/types/supplier-ledger.types'
 
-const TABLE_HEADERS = [
-  'ID',
+const SUMMARY_TABLE_HEADERS = [
+  '',
+  "To'lov (UZS)",
+  "To'lov (USD)",
+  'Qarzdorlik (UZS)',
+  'Qarzdorlik (USD)',
+] as const
+
+const ENTRIES_TABLE_HEADERS = [
+  '№',
   "To'lov (UZS)",
   "To'lov (USD)",
   'Qarzdorlik (UZS)',
   'Qarzdorlik (USD)',
   'Saqlangan vaqti',
-]
+] as const
 
 const EMPTY_SUMMARY = {
   totalPaymentUzs: 0,
@@ -132,114 +139,115 @@ export function SupplierLedgerReport({ supplierId }: SupplierLedgerReportProps) 
 
   return (
     <>
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <CardTitle>Hisobot</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDialogType('debt')}
-              >
-                <AppIcon name="plus" />
-                Qarzdorlik qo&apos;shish
-              </Button>
-              <Button onClick={() => setDialogType('payment')}>
-                <AppIcon name="plus" />
-                To&apos;lov qo&apos;shish
-              </Button>
-            </div>
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
+          <h2 className="text-lg font-semibold tracking-tight">Hisobot</h2>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setDialogType('debt')}>
+              <AppIcon name="plus" />
+              Qarzdorlik qo&apos;shish
+            </Button>
+            <Button onClick={() => setDialogType('payment')}>
+              <AppIcon name="plus" />
+              To&apos;lov qo&apos;shish
+            </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
+        <div className="shrink-0 overflow-auto">
+          <Table className={BORDERLESS_TABLE_CLASS}>
+            <TableHeader>
+              <TableRow>
+                {SUMMARY_TABLE_HEADERS.map((header) => (
+                  <TableHead
+                    key={header || 'label'}
+                    className={header ? 'text-right' : 'w-32'}
+                  >
+                    {header}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="font-semibold">
+                <TableCell>Umumiy</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.totalPaymentUzs)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.totalPaymentUsd)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.totalDebtUzs)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.totalDebtUsd)}
+                </TableCell>
+              </TableRow>
+              <TableRow className="font-semibold">
+                <TableCell>Qarzdorlik</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.netDebtUzs)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMoney(summary.netDebtUsd)}
+                </TableCell>
+                <TableCell />
+                <TableCell />
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto">
+          {showSkeleton ? (
+            <DataTableSkeleton
+              columns={ENTRIES_TABLE_HEADERS.length}
+              rows={6}
+              headers={[...ENTRIES_TABLE_HEADERS]}
+            />
+          ) : (
+            <Table className={BORDERLESS_TABLE_CLASS}>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-16" />
-                  <TableHead className="text-right">{"To'lov (UZS)"}</TableHead>
-                  <TableHead className="text-right">{"To'lov (USD)"}</TableHead>
-                  <TableHead className="text-right">Qarzdorlik (UZS)</TableHead>
-                  <TableHead className="text-right">Qarzdorlik (USD)</TableHead>
-                  <TableHead />
+                <TableRow>
+                  {ENTRIES_TABLE_HEADERS.map((header) => (
+                    <TableHead
+                      key={header}
+                      className={
+                        header === '№'
+                          ? 'w-12 text-center'
+                          : header === 'Saqlangan vaqti'
+                            ? 'whitespace-nowrap'
+                            : 'text-right'
+                      }
+                    >
+                      {header}
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow className="bg-muted/20 font-semibold hover:bg-muted/20">
-                  <TableCell>Umumiy</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.totalPaymentUzs)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.totalPaymentUsd)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.totalDebtUzs)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.totalDebtUsd)}
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-                <TableRow className="bg-muted/20 font-semibold hover:bg-muted/20">
-                  <TableCell>Qarzdorlik</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.netDebtUzs)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatMoney(summary.netDebtUsd)}
-                  </TableCell>
-                  <TableCell />
-                  <TableCell />
-                  <TableCell />
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-auto">
-            {showSkeleton ? (
-              <DataTableSkeleton
-                columns={6}
-                rows={6}
-                headers={TABLE_HEADERS}
-              />
-            ) : (
-              <Table>
-                <TableHeader>
+                {entries.length === 0 ? (
                   <TableRow>
-                    {TABLE_HEADERS.map((header) => (
-                      <TableHead
-                        key={header}
-                        className={
-                          header === 'ID'
-                            ? 'w-16'
-                            : header === 'Saqlangan vaqti'
-                              ? 'text-right'
-                              : 'text-right'
-                        }
-                      >
-                        {header}
-                      </TableHead>
-                    ))}
+                    <TableCell
+                      colSpan={ENTRIES_TABLE_HEADERS.length}
+                      className="text-muted-foreground h-24 text-center"
+                    >
+                      Yozuvlar topilmadi
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {entries.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-muted-foreground h-24 text-center"
-                      >
-                        Yozuvlar topilmadi
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    entries.map((entry) => (
+                ) : (
+                  entries.map((entry, index) => {
+                    const currentPage = ledgerQuery.data?.meta.page ?? 1
+                    const currentPerPage =
+                      ledgerQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
+                    const rowNumber =
+                      (currentPage - 1) * currentPerPage + index + 1
+
+                    return (
                       <TableRow key={entry.id}>
-                        <TableCell className="font-medium tabular-nums">
-                          {entry.entryNumber}
+                        <TableCell className="text-muted-foreground text-center tabular-nums">
+                          {rowNumber}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatMoney(entry.paymentUzs)}
@@ -253,29 +261,29 @@ export function SupplierLedgerReport({ supplierId }: SupplierLedgerReportProps) 
                         <TableCell className="text-right tabular-nums">
                           {formatMoney(entry.debtUsd)}
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-right text-sm">
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                           {formatDateDisplay(entry.createdAt)}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-
-          {!showSkeleton && (
-            <DataTablePagination
-              meta={paginationMeta}
-              onPageChange={setPage}
-              onPerPageChange={setPerPage}
-              disabled={showRefreshing}
-            />
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
           )}
+        </div>
 
-          <QueryRefreshIndicator visible={showRefreshing} />
-        </CardContent>
-      </Card>
+        {!showSkeleton && (
+          <DataTablePagination
+            meta={paginationMeta}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+            disabled={showRefreshing}
+          />
+        )}
+
+        <QueryRefreshIndicator visible={showRefreshing} />
+      </div>
 
       <SupplierLedgerEntryDialog
         open={dialogType !== null}

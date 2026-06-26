@@ -6,6 +6,7 @@ export interface WarehouseRecord {
   address: string
   description: string
   isActive: boolean
+  dailySalesPlan: number
   createdAt: string
   updatedAt: string
 }
@@ -17,6 +18,7 @@ export interface CreateWarehouseRequest {
   address?: string
   description?: string
   isActive?: boolean
+  dailySalesPlan?: number
 }
 
 export type UpdateWarehouseRequest = Partial<CreateWarehouseRequest>

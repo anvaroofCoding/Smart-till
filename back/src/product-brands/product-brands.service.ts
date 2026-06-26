@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import { getProductCountsByField } from '../common/utils/product-usage-counts';
 import {
   buildIdFilter,
@@ -51,7 +52,7 @@ export class ProductBrandsService {
 
   async findAll(query: ProductBrandQueryDto) {
     const page = query.page ?? 1;
-    const perPage = query.perPage ?? 20;
+    const perPage = query.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter = this.buildListFilter(query);

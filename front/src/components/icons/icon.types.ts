@@ -15,6 +15,7 @@ export type AppIconName =
   | 'clipboard-list'
   | 'eye'
   | 'eye-off'
+  | 'excel'
   | 'grip-vertical'
   | 'hand-coins'
   | 'loader'

@@ -7,6 +7,8 @@ export function getAllPageUrls(): string[] {
 
 const ADMIN_ONLY_PREFIXES = ['/sozlamalar/foydalanuvchilar']
 
+const SELF_SERVICE_PATHS = ['/profil']
+
 function isAdminOnlyPath(path: string): boolean {
   const normalized = path.startsWith('/') ? path : `/${path}`
   return ADMIN_ONLY_PREFIXES.some(
@@ -22,6 +24,8 @@ export function canAccessPage(
   if (!user) return false
 
   const normalized = path.startsWith('/') ? path : `/${path}`
+
+  if (SELF_SERVICE_PATHS.includes(normalized)) return true
 
   if (isAdminOnlyPath(normalized) && user.role !== 'admin') {
     return false

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
 import { AppIcon } from '@/components/icons/app-icon'
 import { DataTablePagination } from '@/components/data-table-pagination'
 import {
@@ -12,7 +16,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -32,6 +35,7 @@ import {
 import { useQueryLoading, useQueriesLoading } from '@/hooks/use-query-loading'
 import { useListPagination } from '@/hooks/use-list-pagination'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { notify } from '@/lib/notify'
 import { getUserWarehouseLabel } from '@/lib/user-warehouse'
 import { formatDateDisplay } from '@/lib/date-format'
@@ -174,10 +178,6 @@ export function UsersPage() {
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Foydalanuvchilar</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Foydalanuvchilarni yaratish, tahrirlash va istalgan vaqtda faol yoki nofaol
-              qilish. Nofaol foydalanuvchi tizimga kira olmaydi.
-            </p>
           </div>
           <Button asChild>
             <Link to={CREATE_USER_PATH}>
@@ -189,22 +189,14 @@ export function UsersPage() {
 
         <StatsCardsSkeleton />
 
-        <Card className="flex min-h-0 flex-1 flex-col">
-          <CardHeader className="shrink-0">
-            <CardTitle className="flex items-center gap-2">
-              <AppIcon name="users" />
-              Foydalanuvchilar ro&apos;yxati
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-hidden">
+        <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
             <DataTableSkeleton
               columns={9}
               rows={6}
               headers={TABLE_HEADERS}
               showToolbar
             />
-          </CardContent>
-        </Card>
+        </div>
       </div>
     )
   }
@@ -214,10 +206,6 @@ export function UsersPage() {
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Foydalanuvchilar</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Foydalanuvchilarni yaratish, tahrirlash va istalgan vaqtda faol yoki nofaol
-            qilish. Nofaol foydalanuvchi tizimga kira olmaydi.
-          </p>
         </div>
         <Button asChild>
           <Link to={CREATE_USER_PATH}>
@@ -244,14 +232,7 @@ export function UsersPage() {
         ))}
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="users" />
-            Foydalanuvchilar ro&apos;yxati
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="relative w-full max-w-md shrink-0">
             <AppIcon name="search" className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2" />
             <Input
@@ -270,7 +251,7 @@ export function UsersPage() {
                 headers={TABLE_HEADERS}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
@@ -293,7 +274,7 @@ export function UsersPage() {
                   ) : (
                     users.map((user, index) => {
                       const page = usersQuery.data?.meta.page ?? 1
-                      const perPage = usersQuery.data?.meta.perPage ?? 50
+                      const perPage = usersQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
                       const rowNumber = (page - 1) * perPage + index + 1
 
                       return (
@@ -367,8 +348,7 @@ export function UsersPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

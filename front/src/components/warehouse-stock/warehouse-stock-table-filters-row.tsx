@@ -1,4 +1,4 @@
-import { TABLE_FILTER_CELL_CLASS, TABLE_FILTER_FIELD_CLASS } from '@/components/shared/table-filter-field'
+import { TABLE_FILTER_CELL_CLASS, TABLE_FILTER_FIELD_CLASS, BORDERLESS_FILTER_ROW_CLASS } from '@/components/shared/table-filter-field'
 import {
   Select,
   SelectContent,
@@ -33,7 +33,7 @@ export function WarehouseStockTableFiltersRow({
   onChange,
 }: WarehouseStockTableFiltersRowProps) {
   return (
-    <TableRow className="bg-muted/30 hover:bg-muted/30">
+    <TableRow className={BORDERLESS_FILTER_ROW_CLASS}>
       <TableCell className={TABLE_FILTER_CELL_CLASS} />
 
       <TableCell className={TABLE_FILTER_CELL_CLASS}>
@@ -97,6 +97,17 @@ export function WarehouseStockTableFiltersRow({
             ))}
           </SelectContent>
         </Select>
+      </TableCell>
+
+      <TableCell className={TABLE_FILTER_CELL_CLASS}>
+        <Input
+          value={filters.barcode}
+          onChange={(e) => onChange({ barcode: e.target.value })}
+          placeholder="Barkod"
+          disabled={disabled}
+          className={TABLE_FILTER_FIELD_CLASS}
+          aria-label="Barkod bo'yicha filter"
+        />
       </TableCell>
 
       <TableCell className={TABLE_FILTER_CELL_CLASS}>

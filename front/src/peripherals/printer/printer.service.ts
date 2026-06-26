@@ -1,4 +1,5 @@
 import { env } from '@/config/env'
+import { renderBarcodeSvg } from '@/lib/barcode'
 import type {
   LabelSize,
   PrintLabelData,
@@ -16,48 +17,72 @@ function mmToPx(mm: number): number {
 }
 
 function buildLabelHtml(data: PrintLabelData, labelSize: LabelSize): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>${data.title}</title>
-        <style>
-          @page { size: ${labelSize.widthMm}mm ${labelSize.heightMm}mm; margin: 2mm; }
-          body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 4mm;
-            width: ${labelSize.widthMm - 4}mm;
-          }
-          h1 { font-size: 10pt; margin: 0 0 2mm; }
-          .barcode { font-family: 'Libre Barcode 128', monospace; font-size: 24pt; }
-          .meta { font-size: 8pt; margin-top: 2mm; }
-        </style>
-      </head>
-      <body>
-        <h1>${data.title}</h1>
-        <div class="barcode">${data.barcode}</div>
-        ${data.sku ? `<div class="meta">SKU: ${data.sku}</div>` : ''}
-        ${data.quantity !== undefined ? `<div class="meta">Qty: ${data.quantity}</div>` : ''}
-        ${data.location ? `<div class="meta">Loc: ${data.location}</div>` : ''}
-      </body>
-    </html>
-  `
+  const barcodeSvg = renderBarcodeSvg(data.barcode, {
+    height: Math.max(24, Math.round(labelSize.heightMm * 2.2)),
+    width: 1.6,
+    fontSize: 10,
+    displayValue: true,
+    margin: 2,
+  })
+
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>&#8203;</title>
+    <style>
+      @page {
+        size: ${labelSize.widthMm}mm ${labelSize.heightMm}mm;
+        margin: 0;
+      }
+      @media print {
+        html, body {
+          width: ${labelSize.widthMm}mm !important;
+          height: ${labelSize.heightMm}mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: ${labelSize.widthMm}mm;
+        height: ${labelSize.heightMm}mm;
+        overflow: hidden;
+        background: #fff;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .barcode-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 1mm;
+      }
+      .barcode-wrap svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="barcode-wrap">${barcodeSvg}</div>
+  </body>
+</html>`
 }
 
 function buildEscPosCommands(data: PrintLabelData): Uint8Array {
   const encoder = new TextEncoder()
-  const lines = [
-    '\x1B\x40',
-    `${data.title}\n`,
-    `${data.barcode}\n`,
-    data.sku ? `SKU: ${data.sku}\n` : '',
-    data.quantity !== undefined ? `Qty: ${data.quantity}\n` : '',
-    data.location ? `Loc: ${data.location}\n` : '',
-    '\n\n\x1D\x56\x00',
-  ]
-  return encoder.encode(lines.join(''))
+  return encoder.encode(`\x1B\x40${data.barcode}\n\n\x1D\x56\x00`)
 }
 
 export class PrinterService {
@@ -67,11 +92,10 @@ export class PrinterService {
   ): Promise<PrintResult> {
     const type = options.type ?? 'browser'
     const labelSize = options.labelSize ?? DEFAULT_LABEL_SIZE
-    const copies = options.copies ?? 1
 
     try {
       if (type === 'browser' || type === 'label') {
-        await this.printViaBrowser(data, labelSize, copies)
+        await this.printViaBrowser(data, labelSize)
         return { success: true, type }
       }
 
@@ -93,7 +117,6 @@ export class PrinterService {
   private async printViaBrowser(
     data: PrintLabelData,
     labelSize: LabelSize,
-    copies: number,
   ): Promise<void> {
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
@@ -117,9 +140,8 @@ export class PrinterService {
       setTimeout(resolve, 300)
     })
 
-    for (let i = 0; i < copies; i++) {
-      iframe.contentWindow?.print()
-    }
+    iframe.contentWindow?.focus()
+    iframe.contentWindow?.print()
 
     setTimeout(() => iframe.remove(), 1_000)
   }

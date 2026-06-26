@@ -14,8 +14,9 @@ import {
   resolveUserWarehouseScope,
   type UserWarehouseScope,
 } from '../common/utils/user-warehouse-scope';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginationDto, DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import { RegisterDto } from '../auth/dto/auth.dto';
+import { UpdateProfileDto } from '../auth/dto/profile.dto';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { User, UserDocument } from './schemas/user.schema';
 import { toUserResponse, toUserResponses } from './users.mapper';
@@ -106,7 +107,7 @@ export class UsersService {
 
   async findAll(pagination: PaginationDto) {
     const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+    const perPage = pagination.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     const filter: {
@@ -298,6 +299,41 @@ export class UsersService {
     }
 
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
+
+    await user.save();
+    return user;
+  }
+
+  async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDocument> {
+    const user = await this.findForAuth(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (dto.login) {
+      const login = dto.login.toLowerCase().trim();
+      const duplicate = await this.userModel.findOne({
+        login,
+        _id: { $ne: user._id },
+      });
+      if (duplicate) {
+        throw new ConflictException('Login already in use');
+      }
+      user.login = login;
+      user.email = buildInternalEmail(login);
+    }
+
+    if (dto.password) {
+      user.passwordHash = await bcrypt.hash(dto.password, this.saltRounds);
+    }
+
+    if (dto.firstName !== undefined) user.firstName = dto.firstName.trim();
+    if (dto.lastName !== undefined) user.lastName = dto.lastName.trim();
+    if (dto.phone !== undefined) user.phone = dto.phone.trim();
+    if (dto.birthDate !== undefined) {
+      user.birthDate = dto.birthDate ? new Date(dto.birthDate) : undefined;
+    }
+    if (dto.avatar !== undefined) user.avatar = dto.avatar;
 
     await user.save();
     return user;

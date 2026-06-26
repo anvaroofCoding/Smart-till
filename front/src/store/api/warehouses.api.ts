@@ -65,7 +65,7 @@ export const warehousesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<WarehouseRecord>) =>
         response.data,
-      invalidatesTags: [{ type: API_TAGS.Warehouse, id: 'LIST' }],
+      invalidatesTags: [{ type: API_TAGS.Warehouse, id: 'LIST' }, { type: API_TAGS.Order, id: 'SALES_REPORT' }],
     }),
 
     updateWarehouse: builder.mutation<
@@ -82,6 +82,7 @@ export const warehousesApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: API_TAGS.Warehouse, id },
         { type: API_TAGS.Warehouse, id: 'LIST' },
+        { type: API_TAGS.Order, id: 'SALES_REPORT' },
       ],
     }),
 

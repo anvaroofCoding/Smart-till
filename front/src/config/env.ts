@@ -15,9 +15,28 @@ function readNumberEnv(key: keyof ImportMetaEnv, fallback: number): number {
   return parsed
 }
 
+export function resolveApiUrl(): string {
+  const configured = import.meta.env.VITE_API_URL?.trim()
+  if (configured && configured !== '/api') {
+    return configured
+  }
+  return '/api'
+}
+
+function resolveWsUrl(): string {
+  const configured = import.meta.env.VITE_WS_URL
+  if (configured !== undefined && configured.trim() !== '') {
+    return configured
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return 'http://localhost:3000'
+}
+
 export const env = {
-  apiUrl: readEnv('VITE_API_URL', '/api'),
-  wsUrl: readEnv('VITE_WS_URL', 'http://localhost:3000'),
+  apiUrl: resolveApiUrl(),
+  wsUrl: resolveWsUrl(),
   inventoryPollIntervalMs: readNumberEnv('VITE_INVENTORY_POLL_INTERVAL_MS', 5000),
   scanner: {
     deviceId: readEnv('VITE_SCANNER_DEVICE_ID', 'scanner-01'),

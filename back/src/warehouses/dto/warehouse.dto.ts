@@ -1,8 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsNumber,
   IsOptional,
   IsString,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -26,6 +28,15 @@ export class CreateWarehouseDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    example: 50_000_000,
+    description: 'Kunlik savdo rejasi (so\'m)',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  dailySalesPlan?: number;
 }
 
 export class UpdateWarehouseDto extends PartialType(CreateWarehouseDto) {}
@@ -51,6 +62,9 @@ export class WarehouseResponseDto {
 
   @ApiProperty()
   isActive: boolean;
+
+  @ApiProperty({ description: 'Kunlik savdo rejasi (so\'m)' })
+  dailySalesPlan: number;
 
   @ApiProperty()
   createdAt: Date;

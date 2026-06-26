@@ -8,13 +8,8 @@ import {
   type WarehouseStockTableFilters,
 } from '@/components/warehouse-stock/warehouse-stock-table-filters'
 import { WarehouseStockListTable } from '@/components/warehouse-stock/warehouse-stock-list-table'
-import { Badge } from '@/components/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { LIST_PAGE_TABLE_SECTION_CLASS } from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
@@ -22,6 +17,7 @@ import { useQueryLoading } from '@/hooks/use-query-loading'
 import { useUserWarehouseAccess } from '@/hooks/use-user-warehouse-access'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { exportWarehouseStockToExcel } from '@/lib/export-warehouse-stock-excel'
 import { notify } from '@/lib/notify'
 import { useGetProductCategoriesQuery } from '@/store/api/product-categories.api'
 import { useGetProductsQuery } from '@/store/api/products.api'
@@ -36,6 +32,7 @@ export function WarehouseProductQuantitiesPage() {
   const [filters, setFilters] = useState<WarehouseStockTableFilters>(
     emptyWarehouseStockTableFilters,
   )
+  const [isExporting, setIsExporting] = useState(false)
 
   const debouncedFilters = useDebouncedValue(filters, 300)
   const filterQuery = useMemo(
@@ -83,47 +80,63 @@ export function WarehouseProductQuantitiesPage() {
     setFilters((prev) => ({ ...prev, ...patch }))
   }
 
+  async function handleExportExcel() {
+    if (isExporting) return
+
+    setIsExporting(true)
+    try {
+      const total = await exportWarehouseStockToExcel()
+      notify.success(
+        total > 0
+          ? `${total} ta maxsulot Excel faylga yuklandi`
+          : 'Eksport qilinadigan maxsulot topilmadi',
+      )
+    } catch (error) {
+      notify.error(
+        getApiErrorMessage(error, 'Excel faylni yuklab bo\'lmadi'),
+      )
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Maxsulotlar soni
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Omborlardagi maxsulotlar miqdori, kirim narxi va sotiladigan narxi.
-            Qatorni bosing yoki filterlar orqali ombor, kategoriya va maxsulot
-            bo&apos;yicha qidiring.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Maxsulotlar soni
+        </h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleExportExcel}
+          disabled={isExporting}
+        >
+          <AppIcon
+            name={isExporting ? 'loader' : 'excel'}
+            className={isExporting ? 'animate-spin' : undefined}
+          />
+          Excel
+        </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="package" />
-            Ombordagi maxsulotlar
-            <Badge variant="secondary">{paginationMeta.total}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <WarehouseStockListTable
-            items={items}
-            filters={filters}
-            categories={categories}
-            products={products}
-            warehouses={warehouses}
-            paginationMeta={paginationMeta}
-            showTableSkeleton={showTableSkeleton}
-            showTableRefreshing={showTableRefreshing}
-            onFilterChange={handleFilterChange}
-            onPageChange={setPage}
-            onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
-            emptyMessage="Omborda maxsulotlar topilmadi"
-            onRowClick={(item) => navigate(`${LIST_PATH}/${item.id}`)}
-          />
-        </CardContent>
-      </Card>
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <WarehouseStockListTable
+        items={items}
+        filters={filters}
+        categories={categories}
+        products={products}
+        warehouses={warehouses}
+        paginationMeta={paginationMeta}
+        showTableSkeleton={showTableSkeleton}
+        showTableRefreshing={showTableRefreshing}
+        onFilterChange={handleFilterChange}
+        onPageChange={setPage}
+        onPerPageChange={(value) => setPerPage(value as 10 | 20 | 50 | 100)}
+        emptyMessage="Omborda maxsulotlar topilmadi"
+        onRowClick={(item) => navigate(`${LIST_PATH}/${item.id}`)}
+        />
+      </div>
     </div>
   )
 }

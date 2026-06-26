@@ -1,8 +1,18 @@
+import type { OrderLineItem } from '@/types/order.types'
 import type { WarehouseStockRecord } from '@/types/warehouse-stock.types'
 
 export interface ProductStockCatalogEntry {
   sellingPrice: number
   availableQuantity: number
+}
+
+function pickSellingPrice(
+  current: number,
+  next: number,
+): number {
+  if (next > 0 && current <= 0) return next
+  if (current > 0 && next <= 0) return current
+  return Math.max(current, next)
 }
 
 export function buildProductStockCatalog(
@@ -23,12 +33,34 @@ export function buildProductStockCatalog(
     }
 
     map.set(productId, {
-      sellingPrice: Math.max(existing.sellingPrice, row.sellingPrice),
+      sellingPrice: pickSellingPrice(existing.sellingPrice, row.sellingPrice),
       availableQuantity: existing.availableQuantity + row.quantity,
     })
   }
 
   return map
+}
+
+export function enrichOrderLineWithStock(
+  item: OrderLineItem,
+  stock: ProductStockCatalogEntry | undefined,
+): OrderLineItem {
+  if (!stock) return item
+
+  return {
+    ...item,
+    unitPrice: stock.sellingPrice > 0 ? stock.sellingPrice : item.unitPrice,
+    quantity: clampOrderQuantity(item.quantity, stock.availableQuantity),
+  }
+}
+
+export function enrichOrderItemsWithStock(
+  items: OrderLineItem[],
+  catalog: Map<string, ProductStockCatalogEntry>,
+): OrderLineItem[] {
+  return items.map((item) =>
+    enrichOrderLineWithStock(item, catalog.get(item.productId)),
+  )
 }
 
 export function clampOrderQuantity(

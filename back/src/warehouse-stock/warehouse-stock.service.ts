@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { DEFAULT_PER_PAGE } from '../common/dto/pagination.dto';
 import { escapeRegex, buildIdFilter } from '../common/utils/list-filter.utils';
 import {
   Product,
@@ -31,6 +32,8 @@ import {
   WarehouseStockDocument,
 } from './schemas/warehouse-stock.schema';
 import { PriceSettingsService } from '../price-settings/price-settings.service';
+import { ProductBarcodesService } from '../products/product-barcodes.service';
+import { ProductsService } from '../products/products.service';
 import { buildSellingPriceKey } from '../price-settings/utils/resolve-selling-price';
 
 @Injectable()
@@ -45,11 +48,13 @@ export class WarehouseStockService {
     @InjectModel(Warehouse.name)
     private readonly warehouseModel: Model<WarehouseDocument>,
     private readonly priceSettingsService: PriceSettingsService,
+    private readonly productsService: ProductsService,
+    private readonly productBarcodesService: ProductBarcodesService,
   ) {}
 
   async findAll(query: WarehouseStockQueryDto, scope?: UserWarehouseScope) {
     const page = query.page ?? 1;
-    const perPage = query.perPage ?? 20;
+    const perPage = query.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
 
     if (scope && !scope.allWarehouses && scope.warehouseIds.length === 0) {
@@ -68,7 +73,7 @@ export class WarehouseStockService {
         .find(filter)
         .populate({
           path: 'productId',
-          select: 'name code categoryId brandId',
+          select: 'name code barcode categoryId brandId',
           populate: [
             { path: 'categoryId', select: 'name' },
             { path: 'brandId', select: 'name' },
@@ -101,7 +106,7 @@ export class WarehouseStockService {
         .find(filter)
         .populate({
           path: 'productId',
-          select: 'name code categoryId brandId',
+          select: 'name code barcode categoryId brandId',
           populate: [
             { path: 'categoryId', select: 'name' },
             { path: 'brandId', select: 'name' },
@@ -127,8 +132,13 @@ export class WarehouseStockService {
   }
 
   private async mapStockItemsToListData(stocks: WarehouseStockDocument[]) {
+    await this.ensureProductBarcodes(stocks);
     const latestMovements = await this.loadLatestMovements(stocks);
     const sellingPrices = await this.resolveSellingPrices(stocks, latestMovements);
+    const productIds = stocks
+      .map((stock) => this.extractProductId(stock.productId))
+      .filter(Boolean);
+    const barcodesMap = await this.productBarcodesService.getBarcodesMap(productIds);
 
     return stocks.map((item) =>
       toWarehouseStockListItem(
@@ -142,6 +152,7 @@ export class WarehouseStockService {
             this.extractProductId(item.productId),
           ),
         ),
+        barcodesMap.get(this.extractProductId(item.productId)) ?? [],
       ),
     );
   }
@@ -151,7 +162,7 @@ export class WarehouseStockService {
       .findById(id)
       .populate({
         path: 'productId',
-        select: 'name code categoryId brandId',
+        select: 'name code barcode categoryId brandId',
         populate: [
           { path: 'categoryId', select: 'name' },
           { path: 'brandId', select: 'name' },
@@ -165,6 +176,8 @@ export class WarehouseStockService {
     }
 
     this.ensureWarehouseAllowed(scope, stock.warehouseId);
+
+    await this.ensureProductBarcodes([stock]);
 
     const movements = await this.movementModel
       .find({
@@ -184,8 +197,15 @@ export class WarehouseStockService {
         this.extractProductId(stock.productId),
       ),
     );
+    const productId = this.extractProductId(stock.productId);
+    const barcodesMap = await this.productBarcodesService.getBarcodesMap([productId]);
 
-    return toWarehouseStockDetail(stock, movements, sellingPrice);
+    return toWarehouseStockDetail(
+      stock,
+      movements,
+      sellingPrice,
+      barcodesMap.get(productId) ?? [],
+    );
   }
 
   private extractProductId(product: unknown): string {
@@ -351,6 +371,18 @@ export class WarehouseStockService {
       });
     }
 
+    if (query.barcode?.trim()) {
+      const productIds = await this.productBarcodesService.findProductIdsByBarcodeSearch(
+        query.barcode.trim(),
+      );
+
+      if (productIds.length === 0) {
+        return { $in: [] };
+      }
+
+      productAnd.push({ _id: { $in: productIds } });
+    }
+
     if (productAnd.length === 0) {
       return null;
     }
@@ -399,6 +431,43 @@ export class WarehouseStockService {
     }
 
     return map;
+  }
+
+  private async ensureProductBarcodes(stocks: WarehouseStockDocument[]) {
+    const missingProductIds = stocks
+      .map((stock) => {
+        const product = stock.productId;
+        if (
+          !product ||
+          typeof product !== 'object' ||
+          !('_id' in product) ||
+          (product as { barcode?: string }).barcode?.trim()
+        ) {
+          return null;
+        }
+
+        return this.extractProductId(product);
+      })
+      .filter((productId): productId is string => Boolean(productId));
+
+    if (missingProductIds.length === 0) {
+      return;
+    }
+
+    const barcodeMap = await this.productsService.ensureBarcodes(missingProductIds);
+
+    for (const stock of stocks) {
+      const product = stock.productId;
+      if (!product || typeof product !== 'object' || !('_id' in product)) {
+        continue;
+      }
+
+      const productId = this.extractProductId(product);
+      const barcode = barcodeMap.get(productId);
+      if (barcode) {
+        (product as { barcode?: string }).barcode = barcode;
+      }
+    }
   }
 
   private ensureWarehouseAllowed(

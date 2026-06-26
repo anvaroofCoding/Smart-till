@@ -9,6 +9,8 @@ export interface ProductRecord {
   id: string
   name: string
   code: string
+  barcode?: string
+  barcodes?: string[]
   description: string
   category: ProductRelation
   brand: ProductRelation
@@ -30,3 +32,16 @@ export interface CreateProductRequest {
 }
 
 export type UpdateProductRequest = Partial<CreateProductRequest>
+
+export interface ProductBarcodeRecord {
+  id: string
+  productId: string
+  value: string
+  source: 'system' | 'manual'
+  isPrimary: boolean
+  createdAt: string
+}
+
+export interface CreateProductBarcodeRequest {
+  value: string
+}

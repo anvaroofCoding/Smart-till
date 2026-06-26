@@ -1,6 +1,6 @@
-import { ChevronsUpDown, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import { AppIcon } from '@/components/icons/app-icon'
 import {
   Avatar,
   AvatarFallback,
@@ -21,6 +21,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
+
+const PROFILE_PATH = '/profil'
 
 function getInitials(name: string) {
   return name
@@ -68,7 +70,7 @@ export function NavUser({
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <AppIcon name="chevrons-up-down" className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -92,8 +94,12 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate(PROFILE_PATH)}>
+              <AppIcon name="users" />
+              Profil
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
+              <AppIcon name="log-out" />
               Chiqish
             </DropdownMenuItem>
           </DropdownMenuContent>

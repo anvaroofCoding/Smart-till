@@ -18,6 +18,7 @@ type PopulatedProduct =
       _id: Types.ObjectId;
       name: string;
       code: string;
+      barcode?: string;
       categoryId: PopulatedRelation;
       brandId: PopulatedRelation;
     };
@@ -40,22 +41,37 @@ function resolveRelation(
   return { id, name: '' };
 }
 
-function resolveProduct(product: PopulatedProduct): WarehouseStockListItemDto['product'] {
+function resolveProduct(
+  product: PopulatedProduct,
+  barcodes: string[] = [],
+): WarehouseStockListItemDto['product'] {
   if (!product || typeof product !== 'object' || !('name' in product)) {
     const id = (product as Types.ObjectId)?.toString() ?? '';
     return {
       id,
       name: '',
       code: '',
+      barcode: '',
+      barcodes: [],
       category: { id: '', name: '' },
       brand: { id: '', name: '' },
     };
   }
 
+  const primaryBarcode = product.barcode?.trim() || barcodes[0] || '';
+  const allBarcodes =
+    barcodes.length > 0
+      ? barcodes
+      : primaryBarcode
+        ? [primaryBarcode]
+        : [];
+
   return {
     id: product._id.toString(),
     name: product.name,
     code: product.code ?? '',
+    barcode: primaryBarcode,
+    barcodes: allBarcodes,
     category: resolveRelation(
       product.categoryId as PopulatedRelation,
       product.categoryId as Types.ObjectId,
@@ -112,6 +128,7 @@ export function toWarehouseStockListItem(
   stock: WarehouseStockDocument,
   latestMovement?: StockMovementDocument | null,
   sellingPrice?: ResolvedSellingPrice,
+  productBarcodes: string[] = [],
 ): WarehouseStockListItemDto {
   const pricing = resolveStockPricing(stock, latestMovement);
   const resolvedSellingPrice = sellingPrice ?? {
@@ -121,7 +138,7 @@ export function toWarehouseStockListItem(
 
   return {
     id: stock._id.toString(),
-    product: resolveProduct(stock.productId as PopulatedProduct),
+    product: resolveProduct(stock.productId as PopulatedProduct, productBarcodes),
     warehouse: resolveRelation(
       stock.warehouseId as PopulatedRelation,
       stock.warehouseId as Types.ObjectId,
@@ -170,12 +187,18 @@ export function toWarehouseStockDetail(
   stock: WarehouseStockDocument,
   movements: StockMovementDocument[],
   sellingPrice?: ResolvedSellingPrice,
+  productBarcodes: string[] = [],
 ): WarehouseStockDetailDto {
   const latestMovement = movements[0] ?? null;
   const priceAnalysis = analyzeUnitPrices(movements);
 
   return {
-    ...toWarehouseStockListItem(stock, latestMovement, sellingPrice),
+    ...toWarehouseStockListItem(
+      stock,
+      latestMovement,
+      sellingPrice,
+      productBarcodes,
+    ),
     movements: movements.map((movement) => toStockMovementResponse(movement)),
     hasMixedUnitPrices: priceAnalysis.hasMixedUnitPrices,
     previousUnitPrices: priceAnalysis.previousUnitPrices,

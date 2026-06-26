@@ -16,13 +16,11 @@ import {
   QueryRefreshIndicator,
 } from '@/components/loading'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -40,6 +38,7 @@ import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { formatDateDisplay } from '@/lib/date-format'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
@@ -47,7 +46,10 @@ import {
   useGetPaymentTypesQuery,
   useSetPaymentTypeStatusMutation,
 } from '@/store/api/payment-types.api'
-import type { PaymentTypeRecord } from '@/types/payment-type.types'
+import {
+  isSystemPaymentType,
+  type PaymentTypeRecord,
+} from '@/types/payment-type.types'
 
 const PAYMENT_TYPES_LIST_PATH = '/to-lov/turlari'
 const PAYMENT_TYPE_CREATE_PATH = '/to-lov/turlari/yaratish'
@@ -72,12 +74,14 @@ function PaymentTypeActiveSwitch({
   disabled?: boolean
   onToggle: (isActive: boolean) => void
 }) {
+  const locked = isSystemPaymentType(paymentType)
+
   return (
     <div className="flex items-center gap-2">
       <Switch
         id={`payment-type-active-${paymentType.id}`}
         checked={paymentType.isActive}
-        disabled={disabled}
+        disabled={disabled || locked}
         onCheckedChange={onToggle}
         aria-label={
           paymentType.isActive
@@ -196,14 +200,7 @@ export function PaymentTypesPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="hand-coins" />
-            To&apos;lov turlari ro&apos;yxati
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="min-h-0 flex-1 overflow-auto">
             {showTableSkeleton ? (
               <DataTableSkeleton
@@ -212,7 +209,7 @@ export function PaymentTypesPage() {
                 headers={[...TABLE_HEADERS]}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
@@ -252,7 +249,7 @@ export function PaymentTypesPage() {
                     paymentTypes.map((paymentType, index) => {
                       const currentPage = paymentTypesQuery.data?.meta.page ?? 1
                       const currentPerPage =
-                        paymentTypesQuery.data?.meta.perPage ?? 20
+                        paymentTypesQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
                       const rowNumber =
                         (currentPage - 1) * currentPerPage + index + 1
 
@@ -313,11 +310,13 @@ export function PaymentTypesPage() {
                                   <AppIcon name="pencil" />
                                 </Link>
                               </Button>
-                              <PaymentTypeDeleteButton
-                                name={paymentType.name}
-                                isDeleting={deletingId === paymentType.id}
-                                onConfirmDelete={() => handleDelete(paymentType)}
-                              />
+                              {!isSystemPaymentType(paymentType) && (
+                                <PaymentTypeDeleteButton
+                                  name={paymentType.name}
+                                  isDeleting={deletingId === paymentType.id}
+                                  onConfirmDelete={() => handleDelete(paymentType)}
+                                />
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -339,8 +338,7 @@ export function PaymentTypesPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

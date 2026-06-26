@@ -7,6 +7,7 @@ import type { StockMovementRecord } from '@/types/warehouse-stock.types'
 
 const SOURCE_LABELS: Record<string, string> = {
   receipt_accept: 'Kirim qabul qilindi',
+  order_fulfillment: 'Buyurtma chiqimi',
 }
 
 const PRICE_EPSILON = 0.009
@@ -84,7 +85,7 @@ export function StockMovementTimeline({
               <div className="bg-muted/40 grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-2">
                 <div>
                   <span className="text-muted-foreground">Yetkazib beruvchi: </span>
-                  <span>{movement.supplier.name}</span>
+                  <span>{movement.supplier.name || '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Ombor: </span>
@@ -92,7 +93,9 @@ export function StockMovementTimeline({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Miqdor: </span>
-                  <span className="tabular-nums">+{movement.delta}</span>
+                  <span className="tabular-nums">
+                    {movement.delta > 0 ? `+${movement.delta}` : movement.delta}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Qoldiq: </span>

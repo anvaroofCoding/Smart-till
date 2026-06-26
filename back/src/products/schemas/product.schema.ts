@@ -13,6 +13,9 @@ export class Product {
   @Prop({ trim: true, default: '' })
   code: string;
 
+  @Prop({ trim: true, unique: true, sparse: true })
+  barcode?: string;
+
   @Prop({ trim: true, default: '' })
   description: string;
 

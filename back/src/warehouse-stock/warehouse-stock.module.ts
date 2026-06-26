@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ProductsModule } from '../products/products.module';
 import { UsersModule } from '../users/users.module';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
 import {
@@ -18,6 +19,7 @@ import { WarehouseStockService } from './warehouse-stock.service';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
+    ProductsModule,
     PriceSettingsModule,
     MongooseModule.forFeature([
       { name: WarehouseStock.name, schema: WarehouseStockSchema },

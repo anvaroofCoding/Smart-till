@@ -1,6 +1,6 @@
 import type { PaginatedMeta } from '@/types/api.types'
 
-export const DEFAULT_PER_PAGE = 20
+export const DEFAULT_PER_PAGE = 100
 
 export const PER_PAGE_OPTIONS = [10, 20, 50, 100] as const
 

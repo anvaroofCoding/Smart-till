@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -13,6 +14,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { PAYMENT_CHANNELS } from '../../daily-balances/constants/payment-channel';
 
 const MAX_LOGO_LENGTH = 3_000_000;
 
@@ -52,6 +54,11 @@ export class CreatePaymentTypeDto {
   @Type(() => InstallmentPlanDto)
   installmentPlans?: InstallmentPlanDto[];
 
+  @ApiPropertyOptional({ enum: PAYMENT_CHANNELS, default: 'other' })
+  @IsOptional()
+  @IsEnum(PAYMENT_CHANNELS)
+  channel?: (typeof PAYMENT_CHANNELS)[number];
+
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
@@ -87,8 +94,22 @@ export class PaymentTypeResponseDto {
   @ApiProperty({ type: [InstallmentPlanResponseDto] })
   installmentPlans: InstallmentPlanResponseDto[];
 
+  @ApiProperty({ enum: PAYMENT_CHANNELS })
+  channel: string;
+
   @ApiProperty()
   isActive: boolean;
+
+  @ApiPropertyOptional({
+    enum: ['cash', 'terminal', 'card'],
+    description: 'Tizim to\'lov turi kaliti (Naqd, Terminal, Karta)',
+  })
+  systemKey?: string;
+
+  @ApiProperty({
+    description: 'Tizim to\'lov turi — o\'chirib yoki nomini o\'zgartirib bo\'lmaydi',
+  })
+  isSystem: boolean;
 
   @ApiProperty()
   createdAt: Date;

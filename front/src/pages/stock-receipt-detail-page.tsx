@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
 import { StockReceiptProductDialog } from '@/components/stock-receipts/stock-receipt-product-dialog'
+import { TruncatedDescriptionCell } from '@/components/shared/truncated-description-cell'
 import { FormPageSkeleton } from '@/components/loading'
+import {
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -16,13 +21,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
   Table,
   TableBody,
   TableCell,
@@ -33,11 +31,13 @@ import {
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { formatMoney } from '@/lib/format-money'
 import { notify } from '@/lib/notify'
 import {
   RECEIPT_PAYMENT_TYPE_LABELS,
   RECEIPT_STATUS_LABELS,
 } from '@/lib/stock-receipt'
+import { cn } from '@/lib/utils'
 import {
   useAddStockReceiptItemMutation,
   useCancelStockReceiptMutation,
@@ -48,32 +48,42 @@ import {
 
 const LIST_PATH = '/omborlar/maxsulot-kirim'
 
-function formatAmount(value: number) {
-  return value.toLocaleString('uz-UZ', {
-    maximumFractionDigits: 2,
-  })
+function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="text-sm font-semibold tracking-tight">{children}</h2>
+  )
 }
 
-function statusVariant(status: 'in_progress' | 'completed' | 'cancelled') {
-  if (status === 'completed') return 'default'
-  if (status === 'in_progress') return 'secondary'
-  return 'destructive'
+function ReceiptStatusBadge({
+  status,
+}: {
+  status: 'in_progress' | 'completed' | 'cancelled'
+}) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        status === 'completed' && 'border-emerald-500/40 text-emerald-600',
+        status === 'in_progress' && 'border-amber-500/40 text-amber-600',
+        status === 'cancelled' && 'border-destructive/40 text-destructive',
+      )}
+    >
+      {RECEIPT_STATUS_LABELS[status]}
+    </Badge>
+  )
 }
 
-function statusDescription(
-  status: 'in_progress' | 'completed' | 'cancelled',
-  submittedAt?: string,
-) {
-  if (status === 'completed') {
-    return 'Kirim qabul qilindi. Maxsulotlar omborga yozilgan.'
-  }
-  if (status === 'cancelled') {
-    return 'Kirim bekor qilingan. Ma\'lumotlar saqlangan, lekin omborga yozilmagan.'
-  }
-  if (submittedAt) {
-    return 'Kirim yuborilgan va Jarayonda. Qabul qilish bo\'limidan tasdiqlang.'
-  }
-  return 'Maxsulotlarni qo\'shing va tayyor bo\'lgach yuboring.'
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <TableRow>
+      <TableCell className="text-muted-foreground w-[38%] max-w-[220px] align-top text-sm font-medium whitespace-normal">
+        {label}
+      </TableCell>
+      <TableCell className="min-w-0 align-top text-sm break-words whitespace-normal [overflow-wrap:anywhere]">
+        {value}
+      </TableCell>
+    </TableRow>
+  )
 }
 
 export function StockReceiptDetailPage() {
@@ -178,6 +188,9 @@ export function StockReceiptDetailPage() {
     )
   }
 
+  const productTableColSpan =
+    (isEditable ? 1 : 0) + (receipt.status === 'completed' ? 1 : 0) + 5
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
@@ -185,20 +198,15 @@ export function StockReceiptDetailPage() {
           <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
             <Link to={LIST_PATH}>
               <AppIcon name="arrow-left" />
-              Orqaga
+              Kirimlar ro&apos;yxati
             </Link>
           </Button>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
               {receipt.name}
             </h1>
-            <Badge variant={statusVariant(receipt.status)}>
-              {RECEIPT_STATUS_LABELS[receipt.status]}
-            </Badge>
+            <ReceiptStatusBadge status={receipt.status} />
           </div>
-          <p className="text-muted-foreground text-sm">
-            {statusDescription(receipt.status, receipt.submittedAt)}
-          </p>
         </div>
 
         {(canSubmit || canCancel) && (
@@ -221,7 +229,6 @@ export function StockReceiptDetailPage() {
             )}
             {canSubmit && (
               <Button
-                variant="default"
                 disabled={receipt.items.length === 0 || submitState.isLoading}
                 onClick={() => setSubmitDialogOpen(true)}
               >
@@ -233,136 +240,132 @@ export function StockReceiptDetailPage() {
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Kirim ma&apos;lumotlari</CardTitle>
-          <CardDescription>Asosiy ma&apos;lumotlar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <dt className="text-muted-foreground text-sm">Yetkazib beruvchi</dt>
-              <dd className="font-medium">{receipt.supplier.name}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-sm">Ombor</dt>
-              <dd className="font-medium">{receipt.warehouse.name}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-sm">To&apos;lov turi</dt>
-              <dd className="font-medium">
-                {RECEIPT_PAYMENT_TYPE_LABELS[receipt.paymentType]}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-sm">Valyuta kursi</dt>
-              <dd className="font-medium tabular-nums">
-                {formatAmount(receipt.exchangeRate)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-sm">Jami summa</dt>
-              <dd className="font-medium tabular-nums">
-                {formatAmount(receipt.totalAmount)}
-              </dd>
-            </div>
-            {receipt.notes && (
-              <div className="sm:col-span-2 lg:col-span-3">
-                <dt className="text-muted-foreground text-sm">Izoh</dt>
-                <dd className="mt-1 text-sm">{receipt.notes}</dd>
-              </div>
-            )}
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="package" />
-            Maxsulotlar
-          </CardTitle>
-          <CardDescription>
-            {receipt.items.length} ta maxsulot qo&apos;shilgan
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="min-h-0 flex-1 overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12 text-center">№</TableHead>
-                <TableHead>Maxsulot</TableHead>
-                <TableHead className="text-right">Miqdor</TableHead>
-                {receipt.status === 'completed' && (
-                  <TableHead className="text-right">Qabul miqdori</TableHead>
-                )}
-                <TableHead className="text-right">Narx</TableHead>
-                <TableHead className="text-right">Summa</TableHead>
-                {isEditable && (
-                  <TableHead className="text-right">Amallar</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {receipt.items.length === 0 ? (
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
+        <div className="min-h-0 flex-1 space-y-6 overflow-auto">
+          <section className="space-y-2">
+            <SectionTitle>Kirim ma&apos;lumotlari</SectionTitle>
+            <Table className={BORDERLESS_TABLE_CLASS}>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={
-                      isEditable
-                        ? 6
-                        : receipt.status === 'completed'
-                          ? 6
-                          : 5
-                    }
-                    className="text-muted-foreground h-24 text-center"
-                  >
-                    Maxsulotlar qo&apos;shilmagan
-                  </TableCell>
+                  <TableHead className="w-[38%] max-w-[220px]">Maydon</TableHead>
+                  <TableHead>Qiymat</TableHead>
                 </TableRow>
-              ) : (
-                receipt.items.map((item, index) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground text-center tabular-nums">
-                      {index + 1}
+              </TableHeader>
+              <TableBody>
+                <InfoRow
+                  label="Yetkazib beruvchi"
+                  value={receipt.supplier.name}
+                />
+                <InfoRow label="Ombor" value={receipt.warehouse.name} />
+                <InfoRow
+                  label="To'lov turi"
+                  value={RECEIPT_PAYMENT_TYPE_LABELS[receipt.paymentType]}
+                />
+                <InfoRow
+                  label="Valyuta kursi"
+                  value={
+                    <span className="tabular-nums">
+                      {formatMoney(receipt.exchangeRate)}
+                    </span>
+                  }
+                />
+                <InfoRow
+                  label="Jami summa"
+                  value={
+                    <span className="font-semibold tabular-nums">
+                      {formatMoney(receipt.totalAmount)}
+                    </span>
+                  }
+                />
+                {receipt.notes?.trim() ? (
+                  <InfoRow
+                    label="Izoh"
+                    value={
+                      <TruncatedDescriptionCell
+                        title="Kirim izohi"
+                        description={receipt.notes}
+                        dialogSubtitle={receipt.name}
+                        lines={2}
+                        className="max-w-full"
+                      />
+                    }
+                  />
+                ) : null}
+              </TableBody>
+            </Table>
+          </section>
+
+          <section className="space-y-2">
+            <SectionTitle>Maxsulotlar</SectionTitle>
+            <Table className={BORDERLESS_TABLE_CLASS}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 text-center">№</TableHead>
+                  <TableHead>Maxsulot nomi</TableHead>
+                  <TableHead className="text-right">Miqdor</TableHead>
+                  {receipt.status === 'completed' && (
+                    <TableHead className="text-right">Qabul miqdori</TableHead>
+                  )}
+                  <TableHead className="text-right">Narx</TableHead>
+                  <TableHead className="text-right">Summa</TableHead>
+                  {isEditable && <TableHead className="w-12" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {receipt.items.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={productTableColSpan}
+                      className="text-muted-foreground h-24 text-center"
+                    >
+                      Maxsulotlar qo&apos;shilmagan
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {item.productName}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatAmount(item.quantity)}
-                    </TableCell>
-                    {receipt.status === 'completed' && (
-                      <TableCell className="text-right tabular-nums">
-                        {formatAmount(item.receivedQuantity ?? 0)}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right tabular-nums">
-                      {formatAmount(item.unitPrice)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatAmount(item.totalPrice)}
-                    </TableCell>
-                    {isEditable && (
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={removingItemId === item.id}
-                          onClick={() => handleRemoveItem(item.id)}
-                          aria-label="O'chirish"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <AppIcon name="trash-2" />
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : (
+                  receipt.items.map((item, index) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-muted-foreground text-center tabular-nums">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="max-w-[320px] font-medium">
+                        <span className="line-clamp-2">{item.productName}</span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatMoney(item.quantity)}
+                      </TableCell>
+                      {receipt.status === 'completed' && (
+                        <TableCell className="text-right tabular-nums">
+                          {formatMoney(item.receivedQuantity ?? 0)}
+                        </TableCell>
+                      )}
+                      <TableCell className="text-right tabular-nums">
+                        {formatMoney(item.unitPrice)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">
+                        {formatMoney(item.totalPrice)}
+                      </TableCell>
+                      {isEditable && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={removingItemId === item.id}
+                            onClick={() => handleRemoveItem(item.id)}
+                            aria-label="O'chirish"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <AppIcon name="trash-2" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </section>
+        </div>
+      </div>
 
       <StockReceiptProductDialog
         open={productDialogOpen}
@@ -379,7 +382,7 @@ export function StockReceiptDetailPage() {
             <AlertDialogDescription>
               <span className="text-foreground font-medium">{receipt.name}</span>{' '}
               bekor qilinganda barcha qo&apos;shilgan maxsulotlar saqlanib qoladi,
-              lekin omborga yozilmaydi. Holat &quot;Bekor qilindi&quot; bo&apos;ladi.
+              lekin omborga yozilmaydi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -404,9 +407,7 @@ export function StockReceiptDetailPage() {
             <AlertDialogTitle>Kirimni yuborasizmi?</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="text-foreground font-medium">{receipt.name}</span>{' '}
-              yuborilgandan keyin holat &quot;Jarayonda&quot; bo&apos;lib qoladi.
-              Qabul qilish faqat &quot;Kirimni qabul qilish&quot; bo&apos;limida
-              amalga oshiriladi.
+              yuborilgandan keyin qabul qilish bo&apos;limida tasdiqlanadi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

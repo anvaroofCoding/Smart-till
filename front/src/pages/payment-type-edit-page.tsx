@@ -105,6 +105,7 @@ export function PaymentTypeEditPage() {
         key={paymentType.id}
         mode="edit"
         initialValues={paymentTypeToFormValues(paymentType)}
+        isSystem={paymentType.isSystem || !!paymentType.systemKey}
         isSaving={updateState.isLoading}
         error={error}
         onSubmit={handleSubmit}

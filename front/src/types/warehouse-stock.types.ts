@@ -9,6 +9,8 @@ export interface WarehouseStockProduct {
   id: string
   name: string
   code: string
+  barcode?: string
+  barcodes?: string[]
   category: WarehouseStockRelation
   brand: WarehouseStockRelation
 }

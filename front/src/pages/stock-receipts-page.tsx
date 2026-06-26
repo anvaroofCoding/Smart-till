@@ -8,13 +8,10 @@ import {
   type StockReceiptTableFilters,
 } from '@/components/stock-receipts/stock-receipt-table-filters'
 import { StockReceiptsListTable } from '@/components/stock-receipts/stock-receipts-list-table'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useListPagination } from '@/hooks/use-list-pagination'
@@ -80,10 +77,6 @@ export function StockReceiptsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Maxsulot kirim qilish
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Jadval ustunlari ostidagi filterlar orqali kirimlarni qidiring.
-            Batafsil uchun qatorni bosing.
-          </p>
         </div>
         <Button asChild>
           <Link to={CREATE_PATH}>
@@ -93,14 +86,7 @@ export function StockReceiptsPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="package" />
-            Kirimlar ro&apos;yxati
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <StockReceiptsListTable
             receipts={receipts}
             filters={filters}
@@ -113,8 +99,7 @@ export function StockReceiptsPage() {
             emptyMessage="Kirimlar topilmadi"
             onRowClick={(receipt) => navigate(`${LIST_PATH}/${receipt.id}`)}
           />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

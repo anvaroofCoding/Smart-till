@@ -1,5 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ProductsModule } from '../products/products.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
 import { Supplier, SupplierSchema } from '../suppliers/schemas/supplier.schema';
@@ -22,6 +24,8 @@ import { StockReceiptsService } from './stock-receipts.service';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
+    NotificationsModule,
+    ProductsModule,
     MongooseModule.forFeature([
       { name: StockReceipt.name, schema: StockReceiptSchema },
       { name: WarehouseStock.name, schema: WarehouseStockSchema },

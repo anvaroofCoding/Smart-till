@@ -1,3 +1,4 @@
+import { BORDERLESS_FILTER_ROW_CLASS } from '@/components/shared/table-filter-field'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import {
@@ -30,7 +31,7 @@ export function PriceSettingTableFiltersRow({
   onChange,
 }: PriceSettingTableFiltersRowProps) {
   return (
-    <TableRow className="hover:bg-transparent">
+    <TableRow className={BORDERLESS_FILTER_ROW_CLASS}>
       <TableCell />
       <TableCell>
         <Input

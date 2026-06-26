@@ -10,6 +10,7 @@ export function toWarehouseResponse(
     address: warehouse.address ?? '',
     description: warehouse.description ?? '',
     isActive: warehouse.isActive,
+    dailySalesPlan: warehouse.dailySalesPlan ?? 0,
     createdAt: (warehouse as WarehouseDocument & { createdAt: Date }).createdAt,
     updatedAt: (warehouse as WarehouseDocument & { updatedAt: Date }).updatedAt,
   };

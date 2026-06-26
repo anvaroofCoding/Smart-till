@@ -96,10 +96,12 @@ export class WarehousesController {
 
   @ApiOperation({ summary: 'Ombor ma\'lumotlari' })
 
-  async findOne(@Param('id') id: string): Promise<WarehouseResponseDto> {
-
-    return this.warehousesService.findByIdResponse(id);
-
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<WarehouseResponseDto> {
+    const scope = await this.usersService.getWarehouseScope(user.sub);
+    return this.warehousesService.findByIdResponse(id, scope);
   }
 
 
@@ -132,9 +134,13 @@ export class WarehousesController {
 
     @Body() dto: UpdateWarehouseDto,
 
+    @CurrentUser() user: JwtPayload,
+
   ): Promise<WarehouseResponseDto> {
 
-    const warehouse = await this.warehousesService.update(id, dto);
+    const scope = await this.usersService.getWarehouseScope(user.sub);
+
+    const warehouse = await this.warehousesService.update(id, dto, scope);
 
     return toWarehouseResponse(warehouse);
 
@@ -152,9 +158,17 @@ export class WarehousesController {
 
     @Body() body: SetWarehouseStatusDto,
 
+    @CurrentUser() user: JwtPayload,
+
   ): Promise<WarehouseResponseDto> {
 
-    const warehouse = await this.warehousesService.setActive(id, body.isActive);
+    const scope = await this.usersService.getWarehouseScope(user.sub);
+
+    const warehouse = await this.warehousesService.setActive(
+      id,
+      body.isActive,
+      scope,
+    );
 
     return toWarehouseResponse(warehouse);
 
@@ -166,9 +180,14 @@ export class WarehousesController {
 
   @ApiOperation({ summary: 'Omborni o\'chirish' })
 
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
 
-    await this.warehousesService.remove(id);
+    const scope = await this.usersService.getWarehouseScope(user.sub);
+
+    await this.warehousesService.remove(id, scope);
 
     return { message: 'Ombor o\'chirildi' };
 

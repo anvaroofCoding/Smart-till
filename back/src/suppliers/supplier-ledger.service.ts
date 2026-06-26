@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { DEFAULT_PER_PAGE, PaginationDto } from '../common/dto/pagination.dto';
 import {
   CreateSupplierLedgerEntryDto,
   SupplierLedgerSummaryDto,
@@ -31,7 +31,7 @@ export class SupplierLedgerService {
     await this.ensureSupplierExists(supplierId);
 
     const page = pagination.page ?? 1;
-    const perPage = pagination.perPage ?? 20;
+    const perPage = pagination.perPage ?? DEFAULT_PER_PAGE;
     const skip = (page - 1) * perPage;
     const filter = { supplierId: new Types.ObjectId(supplierId) };
 

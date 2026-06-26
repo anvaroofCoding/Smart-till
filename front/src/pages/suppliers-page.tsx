@@ -8,13 +8,11 @@ import {
   QueryRefreshIndicator,
 } from '@/components/loading'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  BORDERLESS_TABLE_CLASS,
+  LIST_PAGE_TABLE_SECTION_CLASS,
+} from '@/components/shared/table-filter-field'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -32,6 +30,7 @@ import { useQueryLoading } from '@/hooks/use-query-loading'
 import { pageTitle } from '@/config/seo'
 import { SUPPLIER_CURRENCY_LABELS } from '@/lib/currency'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
@@ -144,10 +143,6 @@ export function SuppliersPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Yetkazib beruvchilar
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Qator ustiga bosib batafsil ma&apos;lumotlarni ko&apos;rishingiz
-            mumkin.
-          </p>
         </div>
         <Button asChild>
           <Link to={SUPPLIER_CREATE_PATH}>
@@ -157,14 +152,7 @@ export function SuppliersPage() {
         </Button>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <AppIcon name="truck" />
-            Yetkazib beruvchilar ro&apos;yxati
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
           <div className="relative w-full max-w-md shrink-0">
             <AppIcon
               name="search"
@@ -186,7 +174,7 @@ export function SuppliersPage() {
                 headers={TABLE_HEADERS}
               />
             ) : (
-              <Table>
+              <Table className={BORDERLESS_TABLE_CLASS}>
                 <TableHeader>
                   <TableRow>
                     {TABLE_HEADERS.map((header) => (
@@ -218,7 +206,7 @@ export function SuppliersPage() {
                   ) : (
                     suppliers.map((supplier, index) => {
                       const page = suppliersQuery.data?.meta.page ?? 1
-                      const perPage = suppliersQuery.data?.meta.perPage ?? 20
+                      const perPage = suppliersQuery.data?.meta.perPage ?? DEFAULT_PER_PAGE
                       const rowNumber = (page - 1) * perPage + index + 1
 
                       const detailPath = `${SUPPLIERS_LIST_PATH}/${supplier.id}`
@@ -301,8 +289,7 @@ export function SuppliersPage() {
           )}
 
           <QueryRefreshIndicator visible={showTableRefreshing} />
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

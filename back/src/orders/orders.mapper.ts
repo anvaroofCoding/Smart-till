@@ -22,6 +22,7 @@ export function toOrderResponse(
       quantity: item.quantity,
       discount: item.discount ?? 0,
       lineTotal: item.lineTotal,
+      fulfilled: item.fulfilled ?? false,
     })),
     payments: (order.payments ?? []).map((payment) => ({
       paymentTypeId: payment.paymentTypeId.toString(),
@@ -37,6 +38,8 @@ export function toOrderResponse(
     paidTotal: order.paidTotal ?? 0,
     remainingTotal: order.remainingTotal ?? 0,
     status: order.status,
+    receiptPrintedAt: order.receiptPrintedAt,
+    receiptSkipped: order.receiptSkipped ?? false,
     createdByName,
     createdAt: (order as OrderDocument & { createdAt: Date }).createdAt,
     updatedAt: (order as OrderDocument & { updatedAt: Date }).updatedAt,

@@ -4,10 +4,11 @@ import {
   buildProductStockCatalog,
   type ProductStockCatalogEntry,
 } from '@/lib/warehouse-stock-catalog'
+import { DEFAULT_PER_PAGE } from '@/lib/pagination'
 import { useGetWarehouseStockQuery } from '@/store/api/warehouse-stock.api'
 import type { WarehouseStockRecord } from '@/types/warehouse-stock.types'
 
-const STOCK_PAGE_SIZE = 100
+const STOCK_PAGE_SIZE = DEFAULT_PER_PAGE
 
 export function useWarehouseStockCatalog() {
   const [page, setPage] = useState(1)
