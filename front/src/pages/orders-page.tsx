@@ -40,6 +40,7 @@ import { ORDER_STATUS_LABELS, getOrderOpenPath } from '@/lib/order-display'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { useGetOrdersQuery } from '@/store/api/orders.api'
+import { useGetUsersQuery } from '@/store/api/users.api'
 import type { OrderRecord } from '@/types/order.types'
 
 const ORDER_CREATE_PATH = '/kassir/buyurtma-yaratish'
@@ -87,6 +88,20 @@ export function OrdersPage() {
     page,
     perPage,
   })
+  const usersQuery = useGetUsersQuery({ page: 1, perPage: 200 })
+
+  const cashiers = useMemo(
+    () =>
+      (usersQuery.data?.data ?? [])
+        .filter((user) => user.isActive && user.position === 'kassir')
+        .map((user) => ({
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+        }))
+        .filter((user) => user.name.length > 0)
+        .sort((left, right) => left.name.localeCompare(right.name, 'uz')),
+    [usersQuery.data],
+  )
 
   const { showSkeleton: showTableSkeleton, showRefreshing: showTableRefreshing } =
     useQueryLoading(ordersQuery)
@@ -155,6 +170,7 @@ export function OrdersPage() {
                   </TableRow>
                   <OrderTableFiltersRow
                     filters={filters}
+                    cashiers={cashiers}
                     disabled={showTableRefreshing}
                     onChange={handleFilterChange}
                   />

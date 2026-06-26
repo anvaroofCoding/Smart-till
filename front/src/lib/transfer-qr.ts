@@ -1,3 +1,5 @@
+import { resolvePublicAppUrl } from '@/config/env'
+
 const TRANSFER_NAKLADNOY_PATH = '/transfer/nakladnoy'
 
 export function getTransferNakladnoyPath(transferId: string): string {
@@ -5,11 +7,12 @@ export function getTransferNakladnoyPath(transferId: string): string {
 }
 
 export function getTransferNakladnoyUrl(transferId: string): string {
-  if (typeof window === 'undefined') {
+  const base = resolvePublicAppUrl()
+  if (!base) {
     return getTransferNakladnoyPath(transferId)
   }
 
-  return `${window.location.origin}${getTransferNakladnoyPath(transferId)}`
+  return `${base}${getTransferNakladnoyPath(transferId)}`
 }
 
 export function parseTransferIdFromQrScan(decodedText: string): string | null {

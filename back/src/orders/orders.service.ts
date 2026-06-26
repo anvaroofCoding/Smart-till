@@ -351,9 +351,9 @@ export class OrdersService {
   async cancel(id: string, scope?: UserWarehouseScope): Promise<OrderDocument> {
     const order = await this.findById(id, scope);
 
-    if (order.status !== 'draft') {
+    if (order.status !== 'draft' && order.status !== 'pending_fulfillment') {
       throw new BadRequestException(
-        'Faqat qoralama buyurtmani bekor qilish mumkin',
+        'Faqat qoralama yoki chiqim kutilayotgan buyurtmani bekor qilish mumkin',
       );
     }
 

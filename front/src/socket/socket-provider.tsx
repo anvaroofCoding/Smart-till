@@ -10,14 +10,14 @@ import { queryClient } from '@/query/query-client'
 import { queryKeys } from '@/query/query-keys'
 import { store, useAppSelector } from '@/store'
 import { API_TAGS, baseApi } from '@/store/api'
-import { selectIsAuthenticated } from '@/store/slices/auth.slice'
+import { selectIsAuthenticated, selectCurrentUser } from '@/store/slices/auth.slice'
 import {
   connectSocket,
   disconnectSocket,
   getSocket,
   type WarehouseSocket,
 } from './socket-client'
-import { SOCKET_EVENTS } from './socket-events'
+import { CLIENT_EVENTS, SOCKET_EVENTS } from './socket-events'
 
 interface SocketContextValue {
   socket: WarehouseSocket
@@ -47,8 +47,13 @@ function invalidateNotificationCaches() {
   )
 }
 
+function subscribeUserRoom(socket: WarehouseSocket, userId: string) {
+  socket.emit(CLIENT_EVENTS.USER_SUBSCRIBE, { userId })
+}
+
 export function SocketProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const user = useAppSelector(selectCurrentUser)
   const [isConnected, setIsConnected] = useState(false)
   const socket = useMemo(() => getSocket(), [])
 
@@ -62,7 +67,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const activeSocket = connectSocket()
     setIsConnected(activeSocket.connected)
 
-    const handleConnect = () => setIsConnected(true)
+    const handleConnect = () => {
+      setIsConnected(true)
+      if (user?.id) {
+        subscribeUserRoom(activeSocket, user.id)
+      }
+    }
     const handleDisconnect = () => setIsConnected(false)
 
     activeSocket.on('connect', handleConnect)
@@ -74,6 +84,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     activeSocket.on(SOCKET_EVENTS.ORDER_UPDATED, invalidateCachesOnRealtimeEvent)
     activeSocket.on(SOCKET_EVENTS.NOTIFICATION_CREATED, invalidateNotificationCaches)
 
+    if (activeSocket.connected && user?.id) {
+      subscribeUserRoom(activeSocket, user.id)
+    }
+
     return () => {
       activeSocket.off('connect', handleConnect)
       activeSocket.off('disconnect', handleDisconnect)
@@ -84,7 +98,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       activeSocket.off(SOCKET_EVENTS.ORDER_UPDATED, invalidateCachesOnRealtimeEvent)
       activeSocket.off(SOCKET_EVENTS.NOTIFICATION_CREATED, invalidateNotificationCaches)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, user?.id])
 
   const value = useMemo(
     () => ({ socket, isConnected }),

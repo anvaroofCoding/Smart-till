@@ -25,7 +25,6 @@ import {
   UpdateProductDto,
 } from './dto/product.dto';
 import { ProductBarcodesService } from './product-barcodes.service';
-import { toProductResponse } from './products.mapper';
 import { ProductsService } from './products.service';
 
 @ApiTags('Products')
@@ -74,14 +73,14 @@ export class ProductsController {
   @ApiOperation({ summary: 'Maxsulot ma\'lumotlari' })
   async findOne(@Param('id') id: string): Promise<ProductResponseDto> {
     const product = await this.productsService.findById(id);
-    return toProductResponse(product);
+    return this.productsService.mapToResponse(product);
   }
 
   @Post()
   @ApiOperation({ summary: 'Yangi maxsulot yaratish' })
   async create(@Body() dto: CreateProductDto): Promise<ProductResponseDto> {
     const product = await this.productsService.create(dto);
-    return toProductResponse(product);
+    return this.productsService.mapToResponse(product);
   }
 
   @Patch(':id')
@@ -91,7 +90,7 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productsService.update(id, dto);
-    return toProductResponse(product);
+    return this.productsService.mapToResponse(product);
   }
 
   @Patch(':id/status')
@@ -101,6 +100,6 @@ export class ProductsController {
     @Body() body: SetProductStatusDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productsService.setActive(id, body.isActive);
-    return toProductResponse(product);
+    return this.productsService.mapToResponse(product);
   }
 }

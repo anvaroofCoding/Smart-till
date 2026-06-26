@@ -10,10 +10,13 @@ import {
   PopoverContent,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { env } from '@/config/env'
 import { formatMoney } from '@/lib/format-money'
 import type { ProductStockCatalogEntry } from '@/lib/warehouse-stock-catalog'
 import { cn } from '@/lib/utils'
 import type { ProductRecord } from '@/types/product.types'
+
+const SCAN_SUFFIX_KEYS = ['Enter', 'Tab'] as const
 
 interface OrderProductPickerProps {
   search: string
@@ -38,6 +41,7 @@ interface OrderProductPickerProps {
   onAddProduct: (product?: ProductRecord) => void
   onAddPayment?: () => void
   resolveProductForSubmit?: (term?: string) => ProductRecord | null
+  resolveBarcodeScan?: (term: string) => ProductRecord | null
   onSearchKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void
 }
 
@@ -64,11 +68,13 @@ export function OrderProductPicker({
   onAddProduct,
   onAddPayment,
   resolveProductForSubmit,
+  resolveBarcodeScan,
   onSearchKeyDown,
 }: OrderProductPickerProps) {
   const hasSearchQuery = search.trim().length > 0
   const internalSearchRef = useRef<HTMLInputElement>(null)
   const inputRef = searchInputRef ?? internalSearchRef
+  const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!autoFocus) return
@@ -76,9 +82,35 @@ export function OrderProductPicker({
     return () => window.clearTimeout(timer)
   }, [autoFocus, inputRef])
 
-  function resolveProductToAdd(): ProductRecord | null {
+  useEffect(() => {
+    return () => {
+      if (scanTimerRef.current) {
+        window.clearTimeout(scanTimerRef.current)
+      }
+    }
+  }, [])
+
+  function focusSearchInput() {
+    window.requestAnimationFrame(() => inputRef.current?.focus())
+  }
+
+  function clearScanTimer() {
+    if (!scanTimerRef.current) return
+    window.clearTimeout(scanTimerRef.current)
+    scanTimerRef.current = null
+  }
+
+  function resolveProductToAdd(term = search): ProductRecord | null {
+    const normalized = term.trim()
+    if (!normalized) return null
+
+    if (resolveBarcodeScan) {
+      const barcodeMatch = resolveBarcodeScan(normalized)
+      if (barcodeMatch) return barcodeMatch
+    }
+
     if (resolveProductForSubmit) {
-      return resolveProductForSubmit(search)
+      return resolveProductForSubmit(normalized)
     }
 
     if (selectedProduct) return selectedProduct
@@ -86,18 +118,49 @@ export function OrderProductPicker({
     return availableProducts[0] ?? null
   }
 
+  function submitSearchValue(rawValue: string) {
+    if (isAdding || isLoading || !isStockReady) return
+
+    const product = resolveProductToAdd(rawValue)
+    if (product) {
+      onAddProduct(product)
+      focusSearchInput()
+    }
+  }
+
+  function scheduleBarcodeScan(rawValue: string) {
+    clearScanTimer()
+
+    const normalized = rawValue.trim()
+    if (!normalized || !resolveBarcodeScan) return
+
+    scanTimerRef.current = window.setTimeout(() => {
+      scanTimerRef.current = null
+      if (isAdding || isLoading || !isStockReady) return
+
+      const product = resolveBarcodeScan(normalized)
+      if (!product) return
+
+      onAddProduct(product)
+      focusSearchInput()
+    }, env.scanner.debounceMs)
+  }
+
+  function handleSearchChange(value: string) {
+    onSearchChange(value)
+    scheduleBarcodeScan(value)
+  }
+
   function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     onSearchKeyDown?.(event)
 
-    if (event.key !== 'Enter') return
+    if (!SCAN_SUFFIX_KEYS.includes(event.key as (typeof SCAN_SUFFIX_KEYS)[number])) {
+      return
+    }
 
     event.preventDefault()
-    if (isAdding || isLoading || !isStockReady) return
-
-    const product = resolveProductToAdd()
-    if (product) {
-      onAddProduct(product)
-    }
+    clearScanTimer()
+    submitSearchValue(event.currentTarget.value)
   }
 
   return (
@@ -143,7 +206,7 @@ export function OrderProductPicker({
                 ref={inputRef}
                 id="order-product-search"
                 value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 className={cn(TABLE_FILTER_FIELD_CLASS, 'pr-9')}
                 autoComplete="off"
@@ -213,7 +276,7 @@ export function OrderProductPicker({
           !isStockReady ||
           (!resolveProductToAdd() && !selectedProduct && !hasSearchQuery)
         }
-        onClick={() => onAddProduct()}
+        onClick={() => submitSearchValue(search)}
       >
         {isAdding && <AppIcon name="loader" className="animate-spin" />}
         Maxsulot qo&apos;shish

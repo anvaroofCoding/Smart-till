@@ -7,6 +7,7 @@ import { FormPageSkeleton } from '@/components/loading'
 import { TransferNakladnoyButton } from '@/components/warehouse-transfers/transfer-nakladnoy-button'
 import { TransferQrPanel } from '@/components/warehouse-transfers/transfer-qr-panel'
 import { TransferQrScannerButton } from '@/components/warehouse-transfers/transfer-qr-scanner-dialog'
+import { TransferRouteDisplay } from '@/components/warehouse-transfers/transfer-route-display'
 import { TransferStatusBadge } from '@/components/warehouse-transfers/transfer-status-badge'
 import {
   BORDERLESS_TABLE_CLASS,
@@ -450,13 +451,6 @@ export function WarehouseTransferAcceptPage() {
           {transfer.name && (
             <p className="text-muted-foreground text-sm">{transfer.code}</p>
           )}
-          {(transfer.status === 'draft' || !isAcceptable) && (
-            <p className="text-muted-foreground text-sm">
-              {transfer.status === 'draft'
-                ? 'Transfer hali jarayonda. Yuborilgach qabul qilishingiz mumkin bo\'ladi.'
-                : 'Transfer qabul qilingan. Ma\'lumotlarni ko\'rishingiz mumkin.'}
-            </p>
-          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -488,27 +482,25 @@ export function WarehouseTransferAcceptPage() {
 
       <div className={`${LIST_PAGE_TABLE_SECTION_CLASS} lg:grid lg:grid-cols-[1fr_auto] lg:gap-4`}>
         <div className="min-w-0 space-y-4">
-        <div className="text-muted-foreground shrink-0 grid gap-2 px-1 text-sm sm:grid-cols-2">
-          <div>
-            <span className="text-muted-foreground">Yuboruvchi ombor:</span>{' '}
-            <span className="text-foreground">{transfer.fromWarehouseName}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Qabul qiluvchi ombor:</span>{' '}
-            <span className="text-foreground">{transfer.toWarehouseName}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Sana:</span>{' '}
-            <span className="text-foreground">
-              {formatDateDisplay(transfer.transferDate) || '—'}
-            </span>
-          </div>
-          {transfer.notes.trim() && (
-            <div className="sm:col-span-2">
-              <span className="text-muted-foreground">Izoh:</span>{' '}
-              <span className="text-foreground">{transfer.notes.trim()}</span>
+        <div className="shrink-0 space-y-3 px-1">
+          <TransferRouteDisplay
+            fromWarehouseName={transfer.fromWarehouseName}
+            toWarehouseName={transfer.toWarehouseName}
+          />
+          <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">Sana:</span>{' '}
+              <span className="text-foreground">
+                {formatDateDisplay(transfer.transferDate) || '—'}
+              </span>
             </div>
-          )}
+            {transfer.notes.trim() && (
+              <div>
+                <span className="text-muted-foreground">Izoh:</span>{' '}
+                <span className="text-foreground">{transfer.notes.trim()}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {isAcceptable && (

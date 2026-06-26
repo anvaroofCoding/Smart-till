@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
   readonly VITE_WS_URL: string
+  readonly VITE_PUBLIC_APP_URL?: string
   readonly VITE_INVENTORY_POLL_INTERVAL_MS: string
   readonly VITE_SCANNER_DEVICE_ID: string
   readonly VITE_SCANNER_DEBOUNCE_MS: string

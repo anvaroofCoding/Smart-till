@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { BrandLogo } from '@/components/brand-logo'
 import { AppLogoMark } from '@/components/app-logo-mark'
 import { LoginForm } from '@/components/login-form'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { APP_NAME, APP_TAGLINE } from '@/config/app'
 import { PAGE_EDGE_PADDING_CLASS } from '@/config/layout'
 import { SEO, pageTitle } from '@/config/seo'
@@ -26,8 +27,9 @@ export function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className={cn('flex flex-col gap-4', PAGE_EDGE_PADDING_CLASS)}>
-        <div className="flex justify-center gap-2 md:justify-start">
+        <div className="flex items-center justify-between gap-2">
           <BrandLogo size="sm" />
+          <ThemeToggle />
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">

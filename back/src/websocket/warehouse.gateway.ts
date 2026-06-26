@@ -65,6 +65,23 @@ export class WarehouseGateway
     return { subscribed: false };
   }
 
+  @SubscribeMessage(CLIENT_EVENTS.USER_SUBSCRIBE)
+  handleUserSubscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { userId?: string },
+  ) {
+    const userRooms = [...client.rooms].filter((room) => room.startsWith('user:'));
+    userRooms.forEach((room) => void client.leave(room));
+
+    if (!payload?.userId) {
+      return { subscribed: false };
+    }
+
+    const room = `user:${payload.userId}`;
+    void client.join(room);
+    return { subscribed: true, room };
+  }
+
   @SubscribeMessage(CLIENT_EVENTS.SCANNER_REGISTER)
   handleScannerRegister(
     @ConnectedSocket() client: Socket,
@@ -126,6 +143,15 @@ export class WarehouseGateway
       };
     }>;
   }) {
-    this.server.emit(SOCKET_EVENTS.NOTIFICATION_CREATED, payload);
+    const emittedTo = new Set<string>();
+
+    for (const userId of payload.userIds) {
+      if (emittedTo.has(userId)) {
+        continue;
+      }
+
+      emittedTo.add(userId);
+      this.server.to(`user:${userId}`).emit(SOCKET_EVENTS.NOTIFICATION_CREATED, payload);
+    }
   }
 }

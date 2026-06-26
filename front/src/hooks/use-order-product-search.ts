@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
+  buildBarcodeProductIndex,
   filterAvailableOrderProducts,
   findOrderProductByBarcode,
+  findOrderProductByExactBarcode,
   findOrderProductFromStockRows,
 } from '@/components/orders/order-product-search'
 import { DEFAULT_PER_PAGE } from '@/lib/pagination'
@@ -59,6 +61,11 @@ export function useOrderProductSearch({
     [debouncedSearch, getProductsForTerm],
   )
 
+  const barcodeProductIndex = useMemo(
+    () => buildBarcodeProductIndex(stockRows, stockCatalog),
+    [stockCatalog, stockRows],
+  )
+
   useEffect(() => {
     setHighlightedIndex(0)
   }, [availableProducts, search])
@@ -86,20 +93,58 @@ export function useOrderProductSearch({
     stockCatalogQuery.isComplete,
   ])
 
-  const resolveProductForSubmit = useCallback(
-    (term = search): ProductRecord | null => {
-      if (selectedProduct) return selectedProduct
+  const resolveBarcodeScan = useCallback(
+    (term: string): ProductRecord | null => {
+      const normalized = term.trim()
+      if (!normalized) return null
+
+      const indexedProduct = barcodeProductIndex.get(normalized)
+      if (indexedProduct) return indexedProduct
 
       if (stockCatalogQuery.isComplete) {
-        const fromStock = findOrderProductFromStockRows(
+        const fromStock = findOrderProductByExactBarcode(
           stockRows,
-          term,
+          normalized,
           stockCatalog,
         )
         if (fromStock) return fromStock
       }
 
-      const immediateMatches = getProductsForTerm(term)
+      return findOrderProductByBarcode(
+        productsQuery.data?.data ?? [],
+        normalized,
+        stockCatalog,
+      )
+    },
+    [
+      barcodeProductIndex,
+      productsQuery.data?.data,
+      stockCatalog,
+      stockCatalogQuery.isComplete,
+      stockRows,
+    ],
+  )
+
+  const resolveProductForSubmit = useCallback(
+    (term = search): ProductRecord | null => {
+      const normalized = term.trim()
+      if (!normalized) return null
+
+      const barcodeMatch = resolveBarcodeScan(normalized)
+      if (barcodeMatch) return barcodeMatch
+
+      if (selectedProduct) return selectedProduct
+
+      if (stockCatalogQuery.isComplete) {
+        const fromStock = findOrderProductFromStockRows(
+          stockRows,
+          normalized,
+          stockCatalog,
+        )
+        if (fromStock) return fromStock
+      }
+
+      const immediateMatches = getProductsForTerm(normalized)
       if (immediateMatches.length === 1) return immediateMatches[0]
 
       if (comboOpen && immediateMatches.length > 0) {
@@ -112,6 +157,7 @@ export function useOrderProductSearch({
       comboOpen,
       getProductsForTerm,
       highlightedIndex,
+      resolveBarcodeScan,
       search,
       selectedProduct,
       stockCatalog,
@@ -189,6 +235,7 @@ export function useOrderProductSearch({
     handleSelectProduct,
     handleSearchKeyDown,
     resolveProductForSubmit,
+    resolveBarcodeScan,
     resetSelection,
   }
 }

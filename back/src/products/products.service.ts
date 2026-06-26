@@ -15,7 +15,7 @@ import {
   ProductCategory,
   ProductCategoryDocument,
 } from '../product-categories/schemas/product-category.schema';
-import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { CreateProductDto, UpdateProductDto, ProductResponseDto } from './dto/product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { ProductBarcodesService } from './product-barcodes.service';
 import { toProductResponse } from './products.mapper';
@@ -83,8 +83,14 @@ export class ProductsService {
       this.productModel.countDocuments(filter),
     ]);
 
+    const productIds = items.map((item) => item._id.toString());
+    const barcodesMap =
+      await this.productBarcodesService.getBarcodesMap(productIds);
+
     return {
-      data: items.map((item) => toProductResponse(item)),
+      data: items.map((item) =>
+        toProductResponse(item, barcodesMap.get(item._id.toString()) ?? []),
+      ),
       meta: {
         total,
         page,
@@ -176,6 +182,14 @@ export class ProductsService {
     }
 
     return filter;
+  }
+
+  async mapToResponse(product: ProductDocument): Promise<ProductResponseDto> {
+    const productId = product._id.toString();
+    const barcodesMap =
+      await this.productBarcodesService.getBarcodesMap([productId]);
+
+    return toProductResponse(product, barcodesMap.get(productId) ?? []);
   }
 
   async findById(id: string): Promise<ProductDocument> {

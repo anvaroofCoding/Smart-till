@@ -1,5 +1,5 @@
 import { config as loadEnv } from 'dotenv';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -11,6 +11,10 @@ import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { ensureRedisAvailability } from './redis/redis.bootstrap';
 import { createRedisClient, isRedisClient } from './redis/redis.factory';
+import {
+  flattenValidationErrors,
+  translateApiMessage,
+} from './common/utils/api-message.util';
 
 async function bootstrap() {
   loadEnv({ path: ['.env.local', '.env'] });
@@ -88,6 +92,19 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const messages = [
+          ...new Set(
+            flattenValidationErrors(errors).map((message) =>
+              translateApiMessage(message),
+            ),
+          ),
+        ];
+
+        return new BadRequestException(
+          messages.length === 1 ? messages[0] : messages,
+        );
+      },
     }),
   );
 

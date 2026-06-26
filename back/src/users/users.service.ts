@@ -75,7 +75,7 @@ export class UsersService {
     });
 
     if (existing) {
-      throw new ConflictException('Login or email already registered');
+      throw new ConflictException('Login yoki email allaqachon ro\'yxatdan o\'tgan');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, this.saltRounds);
@@ -182,7 +182,7 @@ export class UsersService {
   private async findByIdOrThrow(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Foydalanuvchi topilmadi');
     }
     return user;
   }
@@ -199,7 +199,7 @@ export class UsersService {
     const user = await this.findByIdOrThrow(id);
 
     if (!user.isActive) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Foydalanuvchi topilmadi');
     }
 
     return user;
@@ -246,7 +246,7 @@ export class UsersService {
         _id: { $ne: user._id },
       });
       if (duplicate) {
-        throw new ConflictException('Login already in use');
+        throw new ConflictException('Bu login allaqachon band');
       }
       user.login = login;
       if (!dto.email) {
@@ -261,7 +261,7 @@ export class UsersService {
         _id: { $ne: user._id },
       });
       if (duplicate) {
-        throw new ConflictException('Email already in use');
+        throw new ConflictException('Bu email allaqachon band');
       }
       user.email = email;
     }
@@ -307,7 +307,7 @@ export class UsersService {
   async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDocument> {
     const user = await this.findForAuth(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Foydalanuvchi topilmadi');
     }
 
     if (dto.login) {
@@ -317,7 +317,7 @@ export class UsersService {
         _id: { $ne: user._id },
       });
       if (duplicate) {
-        throw new ConflictException('Login already in use');
+        throw new ConflictException('Bu login allaqachon band');
       }
       user.login = login;
       user.email = buildInternalEmail(login);

@@ -9,6 +9,7 @@ import {
 } from '@/components/shared/table-filter-field'
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -39,6 +40,7 @@ import {
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import {
+  useCancelOrderMutation,
   useFulfillOrderMutation,
   useGetOrderQuery,
 } from '@/store/api/orders.api'
@@ -57,8 +59,10 @@ export function OrderFulfillmentPage() {
   const navigate = useNavigate()
   const orderQuery = useGetOrderQuery(id, { skip: !id })
   const [fulfillOrder, fulfillState] = useFulfillOrderMutation()
+  const [cancelOrder, cancelState] = useCancelOrderMutation()
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({})
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
 
   const order = orderQuery.data
@@ -129,6 +133,19 @@ export function OrderFulfillmentPage() {
     }
   }
 
+  async function handleCancelOrder() {
+    if (!id) return
+
+    try {
+      await cancelOrder(id).unwrap()
+      notify.success('Buyurtma bekor qilindi')
+      setCancelDialogOpen(false)
+      navigate(FULFILLMENT_LIST_PATH)
+    } catch (err) {
+      notify.error(getApiErrorMessage(err, 'Buyurtmani bekor qilib bo\'lmadi'))
+    }
+  }
+
   if (orderQuery.isLoading) {
     return <FormPageSkeleton sections={2} fieldsPerSection={3} />
   }
@@ -192,21 +209,32 @@ export function OrderFulfillmentPage() {
           </div>
         </div>
 
-        <Button
-          disabled={!allChecked || fulfillState.isLoading}
-          onClick={() => {
-            const message = validateFulfillment()
-            if (message) {
-              setValidationError(message)
-              return
-            }
-            setValidationError(null)
-            setConfirmOpen(true)
-          }}
-        >
-          <AppIcon name="check" />
-          Buyurtmani tasdiqlash
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+            disabled={cancelState.isLoading || fulfillState.isLoading}
+            onClick={() => setCancelDialogOpen(true)}
+          >
+            Buyurtmani bekor qilish
+          </Button>
+          <Button
+            disabled={!allChecked || fulfillState.isLoading || cancelState.isLoading}
+            onClick={() => {
+              const message = validateFulfillment()
+              if (message) {
+                setValidationError(message)
+                return
+              }
+              setValidationError(null)
+              setConfirmOpen(true)
+            }}
+          >
+            <AppIcon name="check" />
+            Buyurtmani tasdiqlash
+          </Button>
+        </div>
       </div>
 
       <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
@@ -323,7 +351,7 @@ export function OrderFulfillmentPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={fulfillState.isLoading}>
-              Bekor qilish
+              Yo&apos;q
             </AlertDialogCancel>
             <Button
               type="button"
@@ -332,6 +360,34 @@ export function OrderFulfillmentPage() {
             >
               {fulfillState.isLoading ? 'Tasdiqlanmoqda...' : 'Ha, tasdiqlash'}
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Buyurtmani bekor qilasizmi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Rostdan ham bu buyurtmani bekor qilmoqchimisiz? Buyurtma
+              &quot;Bekor qilingan&quot; holatida saqlanadi va chiqim ro&apos;yxatidan
+              olib tashlanadi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelState.isLoading}>
+              Yo&apos;q
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={cancelState.isLoading}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleCancelOrder()
+              }}
+            >
+              {cancelState.isLoading ? 'Bekor qilinmoqda...' : 'Ha, bekor qilish'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

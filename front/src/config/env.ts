@@ -23,6 +23,31 @@ export function resolveApiUrl(): string {
   return '/api'
 }
 
+function isLocalHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+}
+
+/** QR va tashqi havolalar uchun ochiq frontend manzili */
+export function resolvePublicAppUrl(): string {
+  const configured = import.meta.env.VITE_PUBLIC_APP_URL?.trim().replace(/\/$/, '')
+
+  if (typeof window === 'undefined') {
+    return configured ?? ''
+  }
+
+  const { origin, hostname } = window.location
+
+  if (!isLocalHostname(hostname)) {
+    return origin
+  }
+
+  if (configured) {
+    return configured
+  }
+
+  return origin
+}
+
 function resolveWsUrl(): string {
   const configured = import.meta.env.VITE_WS_URL
   if (configured !== undefined && configured.trim() !== '') {

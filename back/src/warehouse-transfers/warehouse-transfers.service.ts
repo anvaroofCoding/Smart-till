@@ -779,15 +779,11 @@ export class WarehouseTransfersService implements OnModuleInit {
 
   private ensureDraftEditable(
     transfer: WarehouseTransferDocument,
-    userId: string,
+    _userId: string,
     scope?: UserWarehouseScope,
   ) {
     if (transfer.status !== 'draft') {
       throw new ConflictException('Faqat jarayondagi transferni tahrirlash mumkin');
-    }
-
-    if (transfer.createdByUserId?.toString() !== userId) {
-      throw new ForbiddenException('Bu transferni tahrirlash huquqi yo\'q');
     }
 
     this.ensureWarehouseAllowed(scope, transfer.fromWarehouseId);

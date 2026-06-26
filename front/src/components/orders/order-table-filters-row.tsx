@@ -1,4 +1,5 @@
 import { TABLE_FILTER_CELL_CLASS, TABLE_FILTER_FIELD_CLASS, BORDERLESS_FILTER_ROW_CLASS } from '@/components/shared/table-filter-field'
+import { TableFilterDatePicker } from '@/components/shared/table-filter-date-picker'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -11,14 +12,23 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { ORDER_STATUS_LABELS } from '@/lib/order-display'
 import type { OrderTableFilters } from './order-table-filters'
 
+const ALL_VALUE = '__all__'
+
+export interface OrderCashierOption {
+  id: string
+  name: string
+}
+
 interface OrderTableFiltersRowProps {
   filters: OrderTableFilters
+  cashiers: OrderCashierOption[]
   disabled?: boolean
   onChange: (patch: Partial<OrderTableFilters>) => void
 }
 
 export function OrderTableFiltersRow({
   filters,
+  cashiers,
   disabled,
   onChange,
 }: OrderTableFiltersRowProps) {
@@ -124,23 +134,36 @@ export function OrderTableFiltersRow({
       </TableCell>
 
       <TableCell className={TABLE_FILTER_CELL_CLASS}>
-        <Input
-          value={filters.createdByName}
-          onChange={(e) => onChange({ createdByName: e.target.value })}
-          placeholder="Kassir"
+        <Select
+          value={filters.createdByName || ALL_VALUE}
+          onValueChange={(value) =>
+            onChange({ createdByName: value === ALL_VALUE ? '' : value })
+          }
           disabled={disabled}
-          className={TABLE_FILTER_FIELD_CLASS}
-          aria-label="Kassir bo'yicha filter"
-        />
+        >
+          <SelectTrigger
+            size="sm"
+            className={TABLE_FILTER_FIELD_CLASS}
+            aria-label="Kassir bo'yicha filter"
+          >
+            <SelectValue placeholder="Barchasi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_VALUE}>Barchasi</SelectItem>
+            {cashiers.map((cashier) => (
+              <SelectItem key={cashier.id} value={cashier.name}>
+                {cashier.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </TableCell>
 
       <TableCell className={TABLE_FILTER_CELL_CLASS}>
-        <Input
+        <TableFilterDatePicker
           value={filters.createdAt}
-          onChange={(e) => onChange({ createdAt: e.target.value })}
-          placeholder="dd.mm.yyyy"
+          onChange={(value) => onChange({ createdAt: value })}
           disabled={disabled}
-          className={TABLE_FILTER_FIELD_CLASS}
           aria-label="Saqlangan vaqt bo'yicha filter"
         />
       </TableCell>

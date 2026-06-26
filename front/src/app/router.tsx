@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { AppShell } from '@/app/app-shell'
 import { AuthGuard, GuestGuard } from '@/app/auth-guard'
 import { HomeRedirect } from '@/app/home-redirect'
 import { DashboardLayout } from '@/layouts/dashboard-layout'
@@ -54,6 +55,7 @@ import { WarehouseTransferAcceptListPage } from '@/pages/warehouse-transfer-acce
 import { WarehouseTransferAcceptPage } from '@/pages/warehouse-transfer-accept-page'
 import { WarehouseTransferViewPage } from '@/pages/warehouse-transfer-view-page'
 import { WarehouseTransferNakladnoyPage } from '@/pages/warehouse-transfer-nakladnoy-page'
+import { NotificationsPage } from '@/pages/notifications-page'
 
 const menuRoutes = flattenSidebarRoutes()
 
@@ -105,23 +107,27 @@ const TRANSFER_VIEW_PATH = 'transfer/transferlar/:id'
 const TRANSFER_ACCEPT_LIST_PATH = 'transfer/qabul-qilish'
 const TRANSFER_ACCEPT_PATH = 'transfer/qabul-qilish/:id'
 const TRANSFER_NAKLADNOY_PATH = 'transfer/nakladnoy/:id'
+const NOTIFICATIONS_PATH = 'bildirishnomalar'
 const PROFILE_PATH = 'profil'
 
 const router = createBrowserRouter([
   {
-    path: '/login',
-    Component: GuestGuard,
+    Component: AppShell,
     children: [
       {
-        index: true,
-        Component: LoginPage,
+        path: '/login',
+        Component: GuestGuard,
+        children: [
+          {
+            index: true,
+            Component: LoginPage,
+          },
+        ],
       },
-    ],
-  },
-  {
-    path: '/',
-    Component: AuthGuard,
-    children: [
+      {
+        path: '/',
+        Component: AuthGuard,
+        children: [
       {
         path: TRANSFER_NAKLADNOY_PATH,
         element: <WarehouseTransferNakladnoyPage />,
@@ -191,6 +197,10 @@ const router = createBrowserRouter([
           {
             path: PROFILE_PATH,
             element: <ProfilePage />,
+          },
+          {
+            path: NOTIFICATIONS_PATH,
+            element: <NotificationsPage />,
           },
           {
             path: PAYMENT_TYPE_CREATE_PATH,
@@ -286,6 +296,8 @@ const router = createBrowserRouter([
           },
         ],
       },
+    ],
+  },
     ],
   },
 ])

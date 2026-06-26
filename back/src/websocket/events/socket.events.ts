@@ -11,6 +11,7 @@ export const SOCKET_EVENTS = {
 export const CLIENT_EVENTS = {
   INVENTORY_SUBSCRIBE: 'inventory:subscribe',
   INVENTORY_UNSUBSCRIBE: 'inventory:unsubscribe',
+  USER_SUBSCRIBE: 'user:subscribe',
   SCANNER_REGISTER: 'scanner:register',
   SCANNER_SCAN: 'scanner:scan',
 } as const;

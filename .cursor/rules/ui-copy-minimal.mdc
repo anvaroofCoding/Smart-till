@@ -1,0 +1,43 @@
+---
+description: UI da ortiqcha izoh va yordamchi matnlarni yozmaslik
+globs: front/src/**/*.tsx,front/src/**/*.ts
+alwaysApply: true
+---
+
+# UI matnlari — minimal uslub
+
+Foydalanuvchi interfeysida **ortiqcha izoh, yordamchi paragraf va tushuntirish matnlari** qo'shilmasin.
+
+## Qoida
+
+- Sarlavha, tugma, jadval, badge, toast va validation xabarlari yetarli
+- Sahifa ostidagi "shu yerda ko'rinadi", "keyin qilishingiz mumkin" kabi matnlar **kerak emas**
+- Holat allaqachon badge, disabled tugma yoki bo'sh holat orqali tushunarli bo'lsa — qo'shimcha gap yozilmaydi
+
+## Qo'shilishi mumkin
+
+- Forma validation xatolari
+- Toast / API xatolari (o'zbek tilida)
+- Dialog tasdiqlash matni
+- Placeholder faqat aniq kerak bo'lsa (login kabi maxsus holatlar bundan mustasno)
+
+## Qo'shilmasin
+
+```tsx
+// ❌ BAD — ortiqcha tushuntirish
+<p className="text-muted-foreground text-sm">
+  Transfer hali jarayonda. Yuborilgach qabul qilishingiz mumkin bo'ladi.
+</p>
+
+// ❌ BAD — sarlavha ostidagi izoh
+<h1>Buyurtmalar</h1>
+<p>Karta raqamlariga yig'ilgan barcha buyurtmalaringiz shu yerda ko'rinadi</p>
+
+// ✅ GOOD — holat badge orqali
+<h1>{transfer.name}</h1>
+<TransferStatusBadge status={transfer.status} />
+```
+
+## Yangi sahifa yaratganda
+
+Avval UI elementlari (status, tugma holati, jadval) yetarlimi tekshir. Faqat haqiqatan noaniq bo'lsa qisqa matn qo'sh.

@@ -2,7 +2,7 @@ import type { AppearanceSettings } from '@/features/appearance/appearance.types'
 
 export const defaultAppearance: AppearanceSettings = {
   notificationsEnabled: true,
-  mode: 'dark',
+  mode: 'light',
   style: 'vega',
   baseColor: 'neutral',
   theme: 'indigo',

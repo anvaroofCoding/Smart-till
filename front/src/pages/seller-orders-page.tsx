@@ -43,6 +43,10 @@ import type { ProductRecord } from '@/types/product.types'
 const SELLER_PRODUCTS_PATH = '/sotuvchilar/maxsulotlar'
 
 export function SellerOrdersPage() {
+  usePageMeta({
+    title: pageTitle('Buyurtmalar', 'Sotuvchilar'),
+  })
+
   const [cardNumber, setCardNumber] = useState('')
 
   const stockCatalogQuery = useWarehouseStockCatalog()
@@ -70,11 +74,10 @@ export function SellerOrdersPage() {
     handleSearchChange,
     handleSelectProduct,
     resetSelection,
+    handleSearchKeyDown,
+    resolveProductForSubmit,
+    resolveBarcodeScan,
   } = useOrderProductSearch()
-
-  usePageMeta({
-    title: pageTitle('Buyurtmalar', 'Sotuvchilar'),
-  })
 
   const carts = myCartsQuery.data?.data ?? []
 
@@ -120,7 +123,7 @@ export function SellerOrdersPage() {
   }
 
   async function handleAddProduct(product?: ProductRecord) {
-    const target = product ?? selectedProduct
+    const target = product ?? selectedProduct ?? resolveProductForSubmit()
     if (!target) return
 
     const cardToUse = await ensureCardReserved(cardNumber)
@@ -150,6 +153,9 @@ export function SellerOrdersPage() {
       }).unwrap()
       notify.success('Maxsulot qo\'shildi')
       resetSelection()
+      window.requestAnimationFrame(() => {
+        document.getElementById('order-product-search')?.focus()
+      })
     } catch (err) {
       notify.error(getApiErrorMessage(err, 'Maxsulot qo\'shib bo\'lmadi'))
     }
@@ -198,10 +204,6 @@ export function SellerOrdersPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Buyurtmalar
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Karta raqamlariga yig&apos;ilgan barcha buyurtmalaringiz shu yerda
-            ko&apos;rinadi
-          </p>
         </div>
         <Link
           to={SELLER_PRODUCTS_PATH}
@@ -213,6 +215,7 @@ export function SellerOrdersPage() {
 
       <div className={LIST_PAGE_TABLE_SECTION_CLASS}>
         <OrderProductPicker
+          autoFocus
           showCardNumber
           cardNumber={cardNumber}
           onCardNumberChange={setCardNumber}
@@ -225,6 +228,9 @@ export function SellerOrdersPage() {
           isLoading={isProductSearchLoading || stockCatalogQuery.isLoading}
           isAdding={addState.isLoading}
           isStockReady={isStockReady && stockCatalogQuery.isComplete}
+          resolveProductForSubmit={resolveProductForSubmit}
+          resolveBarcodeScan={resolveBarcodeScan}
+          onSearchKeyDown={handleSearchKeyDown}
           onSearchChange={handleSearchChange}
           onComboOpenChange={setComboOpen}
           onSelectProduct={handleSelectProduct}

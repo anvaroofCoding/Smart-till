@@ -17,11 +17,13 @@ function buildReceiptHtml(order: OrderRecord): string {
     .map(
       (item, index) => `
         <tr>
-          <td>${index + 1}</td>
-          <td>${item.productName}</td>
-          <td class="num">${item.quantity}</td>
+          <td colspan="5" class="product-name">${index + 1}. ${item.productName}</td>
+        </tr>
+        <tr class="item-values">
+          <td colspan="2"></td>
+          <td class="num qty">${item.quantity}</td>
           <td class="num">${formatMoney(item.unitPrice)}</td>
-          <td class="num">${formatMoney(item.lineTotal)}</td>
+          <td class="num line-total">${formatMoney(item.lineTotal)}</td>
         </tr>
       `,
     )
@@ -64,7 +66,13 @@ function buildReceiptHtml(order: OrderRecord): string {
         width: 100%;
         border-collapse: collapse;
         margin: 8px 0;
+        table-layout: fixed;
       }
+      col.col-no { width: 6%; }
+      col.col-name { width: 34%; }
+      col.col-qty { width: 10%; }
+      col.col-price { width: 25%; }
+      col.col-total { width: 25%; }
       th, td {
         border-bottom: 1px dashed #ccc;
         padding: 4px 2px;
@@ -72,8 +80,26 @@ function buildReceiptHtml(order: OrderRecord): string {
         vertical-align: top;
       }
       th { font-size: 11px; }
-      .num { text-align: right; white-space: nowrap; }
-      .total {
+      .product-name {
+        border-bottom: none;
+        font-weight: 600;
+        word-break: break-word;
+        padding-bottom: 0;
+      }
+      .item-values td {
+        border-bottom: 1px dashed #ccc;
+        padding-top: 0;
+        padding-bottom: 6px;
+        font-size: 11px;
+      }
+      .num {
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .qty { font-weight: 600; }
+      .line-total { font-weight: 700; }
+      .summary-row {
         margin-top: 8px;
         font-weight: 700;
         display: flex;
@@ -98,6 +124,13 @@ function buildReceiptHtml(order: OrderRecord): string {
     </div>
 
     <table>
+      <colgroup>
+        <col class="col-no" />
+        <col class="col-name" />
+        <col class="col-qty" />
+        <col class="col-price" />
+        <col class="col-total" />
+      </colgroup>
       <thead>
         <tr>
           <th>#</th>
@@ -110,9 +143,9 @@ function buildReceiptHtml(order: OrderRecord): string {
       <tbody>${itemRows}</tbody>
     </table>
 
-    <div class="total"><span>Chegirma</span><span>${formatMoney(order.discountTotal)}</span></div>
-    <div class="total"><span>Umumiy</span><span>${formatMoney(order.total)}</span></div>
-    <div class="total"><span>To'landi</span><span>${formatMoney(order.paidTotal)}</span></div>
+    <div class="summary-row"><span>Chegirma</span><span>${formatMoney(order.discountTotal)}</span></div>
+    <div class="summary-row"><span>Umumiy</span><span>${formatMoney(order.total)}</span></div>
+    <div class="summary-row"><span>To'landi</span><span>${formatMoney(order.paidTotal)}</span></div>
 
     <table>
       <thead>

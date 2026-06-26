@@ -10,9 +10,7 @@ import { usePageMeta } from '@/hooks/use-page-meta'
 import { pageTitle } from '@/config/seo'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { notify } from '@/lib/notify'
-import {
-  useClaimSellerCartMutation,
-} from '@/store/api/seller-carts.api'
+import { useClaimSellerCartMutation } from '@/store/api/seller-carts.api'
 import { useCreateDraftOrderMutation } from '@/store/api/orders.api'
 import type { ProductRecord } from '@/types/product.types'
 
@@ -20,6 +18,10 @@ const ORDERS_LIST_PATH = '/kassir/buyurtmalar'
 const ORDER_EDIT_PATH = '/kassir/buyurtmalar'
 
 export function OrderCreatePage() {
+  usePageMeta({
+    title: pageTitle('Buyurtma yaratish', 'Kassir'),
+  })
+
   const navigate = useNavigate()
   const [cardNumber, setCardNumber] = useState('')
   const [createDraftOrder, createDraftState] = useCreateDraftOrderMutation()
@@ -39,12 +41,9 @@ export function OrderCreatePage() {
     handleSelectProduct,
     handleSearchKeyDown,
     resolveProductForSubmit,
+    resolveBarcodeScan,
     resetSelection,
   } = useOrderProductSearch()
-
-  usePageMeta({
-    title: pageTitle('Buyurtma yaratish', 'Kassir'),
-  })
 
   const isBusy = createDraftState.isLoading || claimState.isLoading
 
@@ -152,6 +151,7 @@ export function OrderCreatePage() {
           isAdding={isBusy}
           isStockReady={isStockReady}
           resolveProductForSubmit={resolveProductForSubmit}
+          resolveBarcodeScan={resolveBarcodeScan}
           onSearchKeyDown={handleSearchKeyDown}
           onSearchChange={handleSearchChange}
           onComboOpenChange={setComboOpen}

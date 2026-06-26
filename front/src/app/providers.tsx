@@ -2,7 +2,6 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Provider as ReduxProvider } from 'react-redux'
 import { Toaster } from '@/components/ui/toaster'
-import { NotificationLiveToasts } from '@/components/notifications/notification-live-toasts'
 import { AppearanceProvider } from '@/features/appearance/appearance-context'
 import { queryClient } from '@/query/query-client'
 import { store } from '@/store'
@@ -28,7 +27,6 @@ export function AppProviders({ children }: AppProvidersProps) {
           <AuthProfileSync />
           <SocketProvider>
             {children}
-            <NotificationLiveToasts />
             <Toaster />
             {env.isDev && (
               <Suspense fallback={null}>

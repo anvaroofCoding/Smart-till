@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
-import { uz } from 'date-fns/locale/uz'
+import { Link } from 'react-router-dom'
 
 import { AppIcon } from '@/components/icons/app-icon'
+import { NotificationListItem } from '@/components/notifications/notification-list-item'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
@@ -10,80 +11,39 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useNotificationsEnabled } from '@/features/appearance/appearance-context'
-import { cn } from '@/lib/utils'
+import { useNotificationNavigation } from '@/hooks/use-notification-navigation'
 import {
   useGetNotificationUnreadCountQuery,
   useGetNotificationsQuery,
   useMarkAllNotificationsReadMutation,
-  useMarkNotificationReadMutation,
 } from '@/store/api/notifications.api'
-import type { NotificationRecord } from '@/types/notification.types'
 
-function formatNotificationTime(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  return formatDistanceToNow(date, {
-    addSuffix: true,
-    locale: uz,
-  })
-}
-
-function NotificationItem({
-  notification,
-  onRead,
-}: {
-  notification: NotificationRecord
-  onRead: (id: string) => void
-}) {
-  const isUnread = !notification.readAt
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (isUnread) {
-          onRead(notification.id)
-        }
-      }}
-      className={cn(
-        'flex w-full flex-col gap-1 rounded-md px-3 py-2 text-left transition-colors hover:bg-muted/70',
-        isUnread && 'bg-muted/40',
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium leading-tight">
-          {notification.title}
-        </span>
-        {isUnread ? (
-          <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" />
-        ) : null}
-      </div>
-      <p className="text-xs text-muted-foreground">{notification.message}</p>
-      <span className="text-[11px] text-muted-foreground">
-        {formatNotificationTime(notification.createdAt)}
-      </span>
-    </button>
-  )
-}
+const NOTIFICATIONS_PAGE_PATH = '/bildirishnomalar'
 
 export function NotificationBell() {
   const notificationsEnabled = useNotificationsEnabled()
   const [open, setOpen] = useState(false)
+  const { openNotification } = useNotificationNavigation()
 
   const { data: unreadData } = useGetNotificationUnreadCountQuery(undefined, {
     skip: !notificationsEnabled,
-    pollingInterval: notificationsEnabled ? 60_000 : undefined,
+    pollingInterval: 60_000,
   })
   const { data: notificationsData, isFetching } = useGetNotificationsQuery(
     { page: 1, perPage: 20 },
     { skip: !notificationsEnabled || !open },
   )
-  const [markRead] = useMarkNotificationReadMutation()
   const [markAllRead, markAllState] = useMarkAllNotificationsReadMutation()
 
   const unreadCount = unreadData?.count ?? 0
   const notifications = notificationsData?.data ?? []
+
+  async function handleOpenNotification(
+    notification: Parameters<typeof openNotification>[0],
+  ) {
+    setOpen(false)
+    await openNotification(notification)
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -104,9 +64,12 @@ export function NotificationBell() {
         >
           <AppIcon name="bell" className="size-5" />
           {notificationsEnabled && unreadCount > 0 ? (
-            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium leading-4 text-destructive-foreground">
+            <Badge
+              variant="destructive"
+              className="absolute -right-1 -top-1 flex size-5 min-w-5 items-center justify-center rounded-full border-2 border-background p-0 text-[10px] font-semibold leading-none"
+            >
               {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
+            </Badge>
           ) : null}
         </Button>
       </PopoverTrigger>
@@ -127,24 +90,37 @@ export function NotificationBell() {
         </div>
         <div className="max-h-96 overflow-y-auto p-2">
           {isFetching && notifications.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
               Yuklanmoqda...
             </p>
           ) : notifications.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
               Bildirishnomalar yo&apos;q
             </p>
           ) : (
             <div className="flex flex-col gap-1">
               {notifications.map((notification) => (
-                <NotificationItem
+                <NotificationListItem
                   key={notification.id}
                   notification={notification}
-                  onRead={(id) => void markRead(id)}
+                  compact
+                  onOpen={(item) => void handleOpenNotification(item)}
                 />
               ))}
             </div>
           )}
+        </div>
+        <div className="border-t px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-full text-xs"
+            asChild
+          >
+            <Link to={NOTIFICATIONS_PAGE_PATH} onClick={() => setOpen(false)}>
+              Barchasini ko&apos;rish
+            </Link>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

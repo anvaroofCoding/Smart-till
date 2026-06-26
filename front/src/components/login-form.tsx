@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
-import { getApiErrorMessage } from '@/lib/api-error'
+import { getApiErrorMessage, getApiErrorStatus, isRequestAbortedError } from '@/lib/api-error'
 import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +14,12 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
+import {
+  clearLoginFailures,
+  getLoginRetryAfterSeconds,
+  recordLoginFailure,
+  useLoginLockout,
+} from '@/hooks/use-login-lockout'
 
 export function LoginForm({
   className,
@@ -23,9 +29,19 @@ export function LoginForm({
   const { login, isLoggingIn } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const { isLockedOut, secondsLeft, startLockout } = useLoginLockout()
+
+  const isDisabled = isLoggingIn || isLockedOut
+
+  useEffect(() => {
+    if (!isLockedOut) return
+    setFormError(null)
+  }, [isLockedOut])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (isLockedOut) return
+
     setFormError(null)
 
     const formData = new FormData(event.currentTarget)
@@ -39,9 +55,32 @@ export function LoginForm({
 
     try {
       await login({ login: loginValue, password })
+      clearLoginFailures(loginValue)
       navigate('/kassir/buyurtmalar', { replace: true })
     } catch (error) {
-      notify.error(getApiErrorMessage(error, 'Kirish amalga oshmadi'))
+      let retryAfterSeconds = getLoginRetryAfterSeconds(error)
+
+      if (!retryAfterSeconds) {
+        const status = getApiErrorStatus(error)
+        const wrongCredentials =
+          status === 401 || isRequestAbortedError(error)
+
+        if (wrongCredentials) {
+          retryAfterSeconds = recordLoginFailure(loginValue)
+        }
+      }
+
+      if (retryAfterSeconds) {
+        startLockout(retryAfterSeconds)
+        notify.error(
+          `Juda ko'p noto'g'ri urinish. ${retryAfterSeconds} soniyadan keyin qayta urinib ko'ring.`,
+        )
+        return
+      }
+
+      notify.error(
+        getApiErrorMessage(error, 'Login yoki parol noto\'g\'ri'),
+      )
     }
   }
 
@@ -67,9 +106,8 @@ export function LoginForm({
             id="login"
             name="login"
             type="text"
-            placeholder="admin"
             autoComplete="username"
-            disabled={isLoggingIn}
+            disabled={isDisabled}
             required
           />
         </Field>
@@ -81,9 +119,8 @@ export function LoginForm({
               id="password"
               name="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••"
               autoComplete="current-password"
-              disabled={isLoggingIn}
+              disabled={isDisabled}
               className="pr-10"
               required
             />
@@ -93,7 +130,7 @@ export function LoginForm({
               size="icon"
               className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
               onClick={() => setShowPassword((prev) => !prev)}
-              disabled={isLoggingIn}
+              disabled={isDisabled}
               aria-label={showPassword ? 'Parolni yashirish' : 'Parolni ko\'rish'}
             >
               {showPassword ? (
@@ -108,14 +145,19 @@ export function LoginForm({
         {errorMessage && <FieldError>{errorMessage}</FieldError>}
 
         <Field>
-          <Button type="submit" className="w-full" disabled={isLoggingIn}>
+          <Button type="submit" className="w-full text-white" disabled={isDisabled}>
             {isLoggingIn ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
                 Kirilmoqda...
               </>
+            ) : isLockedOut ? (
+              `${secondsLeft} s`
             ) : (
-              'Kirish'
+              <>
+                <LogIn className="size-4" />
+                Kirish
+              </>
             )}
           </Button>
         </Field>

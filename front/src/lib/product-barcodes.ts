@@ -10,16 +10,20 @@ export function getProductBarcodes(
 ): string[] {
   if (!product) return []
 
-  const fromList = [...(product.barcodes ?? []), ...(product.productBarcodes ?? [])]
-    .map((value) => value.trim())
-    .filter(Boolean)
+  const values = new Set<string>()
 
-  if (fromList.length > 0) {
-    return [...new Set(fromList)]
+  for (const value of [
+    ...(product.barcodes ?? []),
+    ...(product.productBarcodes ?? []),
+  ]) {
+    const trimmed = value.trim()
+    if (trimmed) values.add(trimmed)
   }
 
   const primary = product.barcode?.trim() || product.productBarcode?.trim()
-  return primary ? [primary] : []
+  if (primary) values.add(primary)
+
+  return [...values]
 }
 
 export function matchesProductBarcode(

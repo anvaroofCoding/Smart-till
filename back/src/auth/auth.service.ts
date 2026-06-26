@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { LoginAttemptService } from './login-attempt.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { UpdateProfileDto } from './dto/profile.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -14,6 +15,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly loginAttemptService: LoginAttemptService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -22,21 +24,27 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    await this.loginAttemptService.assertCanAttempt(dto.login);
+
     const user = await this.usersService.findByLoginIncludingInactive(dto.login);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      await this.loginAttemptService.recordFailure(dto.login);
+      throw new UnauthorizedException('Login yoki parol noto\'g\'ri');
     }
 
     const isValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      await this.loginAttemptService.recordFailure(dto.login);
+      throw new UnauthorizedException('Login yoki parol noto\'g\'ri');
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException('Hisob nofaol. Administrator bilan bog\'laning');
     }
+
+    await this.loginAttemptService.recordSuccess(dto.login);
 
     return this.buildAuthResponse(user);
   }
@@ -78,7 +86,7 @@ export class AuthService {
     const user = await this.usersService.findForAuth(userId);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Token yaroqsiz yoki muddati tugagan');
     }
 
     return { user: await this.buildAuthUser(user) };

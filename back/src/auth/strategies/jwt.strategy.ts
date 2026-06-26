@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.authService.validateUser(payload);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Token yaroqsiz yoki muddati tugagan');
     }
 
     return user;

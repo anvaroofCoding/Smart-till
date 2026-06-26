@@ -19,12 +19,24 @@ function resolveRelation(
   };
 }
 
-export function toProductResponse(product: ProductDocument): ProductResponseDto {
+export function toProductResponse(
+  product: ProductDocument,
+  productBarcodes: string[] = [],
+): ProductResponseDto {
+  const primaryBarcode = product.barcode?.trim() || productBarcodes[0] || '';
+  const barcodes =
+    productBarcodes.length > 0
+      ? productBarcodes
+      : primaryBarcode
+        ? [primaryBarcode]
+        : [];
+
   return {
     id: product._id.toString(),
     name: product.name,
     code: product.code ?? '',
-    barcode: product.barcode ?? '',
+    barcode: primaryBarcode,
+    barcodes,
     description: product.description ?? '',
     category: resolveRelation(
       product.categoryId as Types.ObjectId | { _id: Types.ObjectId; name: string },

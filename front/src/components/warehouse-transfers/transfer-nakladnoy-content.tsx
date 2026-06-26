@@ -1,3 +1,4 @@
+import { TransferRouteDisplay } from '@/components/warehouse-transfers/transfer-route-display'
 import { formatDateDisplay } from '@/lib/date-format'
 import { TRANSFER_STATUS_LABELS } from '@/lib/warehouse-transfer'
 import type { WarehouseTransferRecord } from '@/types/warehouse-transfer.types'
@@ -28,24 +29,21 @@ export function TransferNakladnoyContent({ transfer }: TransferNakladnoyContentP
         {transfer.name?.trim() && (
           <p className="mt-1 text-sm text-slate-300">{transfer.name.trim()}</p>
         )}
-        <div className="mt-4 grid gap-2 text-sm">
-          <div className="flex items-start justify-between gap-3">
-            <span className="text-slate-400">Qayerdan</span>
-            <span className="text-right font-medium">{transfer.fromWarehouseName}</span>
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <span className="text-slate-400">Qayerga</span>
-            <span className="text-right font-medium">
-              {transfer.toWarehouseName || '—'}
-            </span>
-          </div>
-          <div className="flex items-start justify-between gap-3">
+        <div className="mt-4 space-y-3">
+          <TransferRouteDisplay
+            fromWarehouseName={transfer.fromWarehouseName}
+            toWarehouseName={transfer.toWarehouseName}
+            variant="on-dark"
+            compact
+            className="w-full"
+          />
+          <div className="flex items-start justify-between gap-3 text-sm">
             <span className="text-slate-400">Sana</span>
             <span className="font-medium">
               {formatDateDisplay(transfer.transferDate) || '—'}
             </span>
           </div>
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 text-sm">
             <span className="text-slate-400">Holat</span>
             <span className="font-medium">{TRANSFER_STATUS_LABELS[transfer.status]}</span>
           </div>

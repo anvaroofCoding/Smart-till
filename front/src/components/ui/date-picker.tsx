@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 
 interface DatePickerProps {
   id?: string
+  'aria-label'?: string
   value?: string
   onChange: (value: string) => void
   placeholder?: string
@@ -27,6 +28,7 @@ interface DatePickerProps {
 
 export function DatePicker({
   id,
+  'aria-label': ariaLabel,
   value = '',
   onChange,
   placeholder = 'dd.mm.yyyy',
@@ -45,6 +47,7 @@ export function DatePicker({
           type="button"
           variant="outline"
           disabled={disabled}
+          aria-label={ariaLabel}
           className={cn(
             'w-full justify-start text-left font-normal',
             !value && 'text-muted-foreground',

@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { translateApiMessages } from '../utils/api-message.util';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -27,8 +28,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : null;
 
-    let message = 'Internal server error';
+    let message = 'Ichki server xatosi. Keyinroq qayta urinib ko\'ring';
     let errors: Record<string, string[]> | undefined;
+    let retryAfterSeconds: number | undefined;
 
     if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
       message = 'So\'rov hajmi juda katta (rasm 2 MB dan oshmasligi kerak)';
@@ -41,13 +43,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     ) {
       const rawMessage = (exceptionResponse as { message: unknown }).message;
       if (Array.isArray(rawMessage)) {
-        message = rawMessage.join(', ');
+        const translated = translateApiMessages(
+          rawMessage.filter((entry): entry is string => typeof entry === 'string'),
+        );
+        message = Array.isArray(translated)
+          ? translated.join('. ')
+          : translated ?? message;
       } else if (typeof rawMessage === 'string') {
-        message = rawMessage;
+        const translated = translateApiMessages(rawMessage);
+        message = typeof translated === 'string' ? translated : message;
       }
 
       if ('errors' in exceptionResponse) {
         errors = (exceptionResponse as { errors: Record<string, string[]> }).errors;
+      }
+
+      if (
+        'retryAfterSeconds' in exceptionResponse &&
+        typeof (exceptionResponse as { retryAfterSeconds?: unknown }).retryAfterSeconds ===
+          'number'
+      ) {
+        retryAfterSeconds = (exceptionResponse as { retryAfterSeconds: number })
+          .retryAfterSeconds;
       }
     }
 
@@ -62,6 +79,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status,
       message,
       ...(errors ? { errors } : {}),
+      ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
     });

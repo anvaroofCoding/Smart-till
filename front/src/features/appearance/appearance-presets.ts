@@ -34,12 +34,20 @@ export function getAccentVars(theme: AccentTheme, mode: ColorMode): ThemeVars {
       '--chart-3': `oklch(0.55 0.12 ${hue - 20})`,
     }
   }
+  const primary = `oklch(0.45 0.18 ${hue})`
+  const primaryForeground = 'oklch(0.985 0 0)'
+
   return {
-    '--primary': `oklch(0.45 0.18 ${hue})`,
-    '--primary-foreground': 'oklch(0.985 0 0)',
+    '--primary': primary,
+    '--primary-foreground': primaryForeground,
     '--ring': `oklch(0.55 0.14 ${hue})`,
-    '--sidebar-primary': `oklch(0.42 0.18 ${hue})`,
-    '--sidebar-primary-foreground': 'oklch(0.985 0 0)',
+    '--sidebar': primary,
+    '--sidebar-foreground': primaryForeground,
+    '--sidebar-accent': `oklch(0.52 0.16 ${hue})`,
+    '--sidebar-accent-foreground': primaryForeground,
+    '--sidebar-border': `oklch(0.40 0.15 ${hue})`,
+    '--sidebar-primary': primaryForeground,
+    '--sidebar-primary-foreground': primary,
     '--sidebar-ring': `oklch(0.55 0.14 ${hue})`,
     '--chart-1': `oklch(0.55 0.18 ${hue})`,
     '--chart-2': `oklch(0.5 0.14 ${hue + 30})`,

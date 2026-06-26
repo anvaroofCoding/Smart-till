@@ -228,6 +228,11 @@ export class ProductBarcodesService implements OnModuleInit {
       return [];
     }
 
+    const exactProductId = await this.findProductIdByExactBarcode(trimmed);
+    if (exactProductId) {
+      return [new Types.ObjectId(exactProductId)];
+    }
+
     const regex = new RegExp(escapeRegex(trimmed), 'i');
     const [barcodeProductIds, legacyProductIds] = await Promise.all([
       this.barcodeModel.find({ value: regex }).distinct('productId').exec(),

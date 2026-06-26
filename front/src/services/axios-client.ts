@@ -35,20 +35,26 @@ export function setStoredAccessToken(token: string | null) {
 function attachAuthInterceptor(instance: AxiosInstance) {
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.baseURL = resolveApiUrl()
-    const token = authTokenGetter?.() ?? getStoredAccessToken()
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const isLoginRequest = config.url?.includes('/auth/login') ?? false
+    if (!isLoginRequest) {
+      const token = authTokenGetter?.() ?? getStoredAccessToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     return config
   })
 
-    instance.interceptors.response.use(
+  instance.interceptors.response.use(
     (response) => response,
     (error: AxiosError<ApiErrorBody>) => {
       const status = error.response?.status
-      if (status === 401) {
+      const isLoginRequest = error.config?.url?.includes('/auth/login') ?? false
+
+      if (status === 401 && !isLoginRequest) {
         onUnauthorized?.()
       }
+
       return Promise.reject(error)
     },
   )
@@ -74,6 +80,17 @@ export async function axiosBaseQuery<T>(
     return { data: response.data }
   } catch (error) {
     const axiosError = error as AxiosError<ApiErrorBody>
+    if (axiosError.code === 'ERR_CANCELED' || axiosError.message === 'canceled') {
+      return {
+        error: {
+          status: 0,
+          statusCode: 0,
+          message: 'So\'rov bekor qilindi',
+          error: 'CanceledError',
+        },
+      }
+    }
+
     const responseData = axiosError.response?.data
     const status = axiosError.response?.status ?? 500
     const responseMessage =
@@ -91,6 +108,11 @@ export async function axiosBaseQuery<T>(
         statusCode: status,
         message: responseMessage ?? axiosError.message,
         error: responseData?.error ?? 'NetworkError',
+        ...(responseData &&
+        typeof responseData === 'object' &&
+        typeof responseData.retryAfterSeconds === 'number'
+          ? { retryAfterSeconds: responseData.retryAfterSeconds }
+          : {}),
       },
     }
   }

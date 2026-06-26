@@ -11,6 +11,7 @@ export const SOCKET_EVENTS = {
 export const CLIENT_EVENTS = {
   INVENTORY_SUBSCRIBE: 'inventory:subscribe',
   INVENTORY_UNSUBSCRIBE: 'inventory:unsubscribe',
+  USER_SUBSCRIBE: 'user:subscribe',
   SCANNER_REGISTER: 'scanner:register',
   SCANNER_SCAN: 'scanner:scan',
 } as const
@@ -68,6 +69,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   [CLIENT_EVENTS.INVENTORY_SUBSCRIBE]: (payload: { warehouseId?: string }) => void
   [CLIENT_EVENTS.INVENTORY_UNSUBSCRIBE]: () => void
+  [CLIENT_EVENTS.USER_SUBSCRIBE]: (payload: { userId: string }) => void
   [CLIENT_EVENTS.SCANNER_REGISTER]: (payload: { deviceId: string }) => void
   [CLIENT_EVENTS.SCANNER_SCAN]: (payload: { barcode: string; timestamp: string }) => void
 }
